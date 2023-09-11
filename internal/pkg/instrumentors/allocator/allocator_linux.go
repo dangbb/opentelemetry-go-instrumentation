@@ -31,6 +31,7 @@ func New() *Allocator {
 // Load loads the BPF file-system.
 func (a *Allocator) Load(ctx *context.InstrumentorContext) error {
 	logger := log.Logger.WithName("allocator")
+	// TODO research about allocation details
 	if ctx.TargetDetails.AllocationDetails != nil {
 		logger = logger.WithValues(
 			"start_addr", ctx.TargetDetails.AllocationDetails.StartAddr,

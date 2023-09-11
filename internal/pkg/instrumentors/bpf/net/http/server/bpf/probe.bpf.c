@@ -170,6 +170,7 @@ static __always_inline struct span_context *extract_context_from_req_headers(voi
 SEC("uprobe/ServerMux_ServeHTTP")
 int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
 {
+    // TODO research on how this is possible
     u64 request_pos = 4;
     struct http_request_t httpReq = {};
     httpReq.start_time = bpf_ktime_get_ns();

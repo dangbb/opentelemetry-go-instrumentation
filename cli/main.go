@@ -35,6 +35,7 @@ func main() {
 	}
 
 	log.Logger.V(0).Info("starting Go OpenTelemetry Agent ...")
+	// examine target -
 	target := process.ParseTargetArgs()
 	if err = target.Validate(); err != nil {
 		log.Logger.Error(err, "invalid target args")
