@@ -54,3 +54,4 @@ services:
 
 volumes:
   shared-data:
+    external: true

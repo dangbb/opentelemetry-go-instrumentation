@@ -15,8 +15,10 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"os"
 
@@ -81,16 +83,14 @@ func NewServer() *Server {
 	}
 }
 
-func (s *Server) queryDb(w http.ResponseWriter, req *http.Request) {
-	ctx := req.Context()
-
+func (s *Server) querying(ctx context.Context, w http.ResponseWriter) {
 	conn, err := s.db.Conn(ctx)
 
 	if err != nil {
 		panic(err)
 	}
 
-	rows, err := conn.QueryContext(req.Context(), sqlQuery)
+	rows, err := conn.QueryContext(ctx, sqlQuery)
 	if err != nil {
 		panic(err)
 	}
@@ -110,6 +110,45 @@ func (s *Server) queryDb(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (s *Server) queryingWithoutWrite(ctx context.Context) {
+	conn, err := s.db.Conn(ctx)
+
+	if err != nil {
+		panic(err)
+	}
+
+	rows, err := conn.QueryContext(ctx, sqlQuery)
+	if err != nil {
+		panic(err)
+	}
+
+	logger.Info("queryDb called")
+	for rows.Next() {
+		var id int
+		var firstName string
+		var lastName string
+		var email string
+		var phone string
+		err := rows.Scan(&id, &firstName, &lastName, &email, &phone)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (s *Server) queryDb(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+
+	s.querying(ctx, w)
+	s.queryingWithoutWrite(ctx)
+
+	traceCtx := trace.SpanContextFromContext(ctx)
+	logger.Info("check var queryingWithoutWrite: ",
+		zap.String("trace id", traceCtx.TraceID().String()),
+		zap.String("span id", traceCtx.SpanID().String()),
+	)
+}
+
 var logger *zap.Logger
 
 func setupHandler(s *Server) *http.ServeMux {
@@ -127,6 +166,7 @@ func main() {
 	}
 	port := fmt.Sprintf(":%d", 8080)
 	logger.Info("starting http server", zap.String("port", port))
+	logger.Info("check if reload")
 
 	s := NewServer()
 	mux := setupHandler(s)

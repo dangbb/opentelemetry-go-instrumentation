@@ -16,12 +16,15 @@ package main
 
 import (
 	"fmt"
+	"go.opentelemetry.io/otel/trace"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"go.uber.org/zap"
 )
+
+var logger *zap.Logger
 
 // Server is Http server that exposes multiple endpoints.
 type Server struct {
@@ -36,13 +39,21 @@ func NewServer() *Server {
 	}
 }
 
-func (s *Server) rolldice(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) rolldice(w http.ResponseWriter, r *http.Request) {
 	n := s.rand.Intn(6) + 1
-	logger.Info("rolldice called", zap.Int("dice", n))
+	logger.Info("rolldice called 1 2 3", zap.Int("dice", n))
+
+	logger.Info("rolldice called 1 2 3", zap.Int("dice", n))
+
+	ctx := trace.SpanContextFromContext(r.Context())
+	logger.Info("rolldice called 1 2 3", zap.Int("dice", n))
+
+	logger.Info("get request context",
+		zap.String("TraceID", ctx.TraceID().String()),
+		zap.String("SpanID", ctx.SpanID().String()))
+
 	fmt.Fprintf(w, "%v", n)
 }
-
-var logger *zap.Logger
 
 func setupHandler(s *Server) *http.ServeMux {
 	mux := http.NewServeMux()
@@ -58,7 +69,10 @@ func main() {
 		return
 	}
 	port := fmt.Sprintf(":%d", 8080)
+	logger.Info("starting http server 1 2 3", zap.String("port", port))
 	logger.Info("starting http server", zap.String("port", port))
+	logger.Info("starting http server", zap.String("port", port))
+	logger.Info("init logger")
 
 	s := NewServer()
 	mux := setupHandler(s)

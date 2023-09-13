@@ -127,13 +127,22 @@ Flow performing auto instrumentation:
     
     How to extract event from object from eBPF program.
     - Do eBPF lib able to read everything (even context, or arbitrary object) ?
-    - Ability to modify context (?)
-    - Read object defined by library.
+    - Ability to modify context (?) - no, not realy. It can only modify by substitution lost of byte with another list of bytes.
+    - Read object defined by library - Has to defined it in *.c file.
     Understand the flow:
     - Include list of C header file.
     - Define list of constants to replace in runtime.
     Understand the C instrumentation code.
     - 
+
+### Disadvantages
+
+The main question is, can we generalize it ?
+
+- For each request and process, the span will be appended to the end of the list, instead of the same grade. This is because we cant modify object. 
+- Can we integrate with exist trace propagation flow? 
+  - Injection: Change value of a specific field for storing trace context. That library should support open telemetry to accomplish with this task.
+  - Extraction: 
 
 ### Research about cilium/ebpf - How it works ? 
 
@@ -154,7 +163,7 @@ Flow performing auto instrumentation:
 OpenTelemetry Go Automatic Instrumentation is licensed under the terms of the [Apache Software License version 2.0].
 See the [license file](./LICENSE) for more details.
 
-Third-party licesnes and copyright notices can be found in the [LICENSES directory](./LICENSES).
+Third-party licenses and copyright notices can be found in the [LICENSES directory](./LICENSES).
 
 [OpenTelemetry]: https://opentelemetry.io/
 [Go]: https://go.dev/
