@@ -40,7 +40,7 @@ or create a virtual machine to compile and run OpenTelemetry Go Automatic Instru
 
 See the [contributing documentation](./CONTRIBUTING.md).
 
-## Dangbb's Thesis contributing 
+## Dangnh's Thesis contributing 
 
 ### Research about current topic 
 
@@ -144,6 +144,20 @@ The main question is, can we generalize it ?
   - Injection: Change value of a specific field for storing trace context. That library should support open telemetry to accomplish with this task.
   - Extraction: 
 
+### eBPF which is related to topic
+
+Link: [uprobe](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md#3-uprobeuretprobe-dynamic-tracing-user-level)
+
+Allow attach probes to user space program's function.
+- Allow attack via function name.
+- Allow attach via address, in case of stripped binary.
+- Allow add offset to function name to create checkpoint. The only thing to keep in mind is should align with instruction boundaries. E.g if instruction is 4 bytes, then an address like 'main+1' won't work.
+
+### Writing eBPF C code 
+
+Link: [build eBPF program](https://dev.to/pemcconnell/building-an-xdp-ebpf-program-with-c-and-golang-a-step-by-step-guide-4hoa)
+-
+
 ### Research about cilium/ebpf - How it works ? 
 
 - Using bootstrap-life to generate bpf program inline. E.g:
@@ -157,6 +171,10 @@ The main question is, can we generalize it ?
 - How it perform substitition ? Can we generalized it into some common usecase ? - Should be able to understand how substitition work.
 
 ### Working on improvement
+
+List of tasks: https://app.diagrams.net/#G1SlL7WR4KKabT_eNkqCcU4cSg3jpgSI-5 
+
+
 
 ## License
 
