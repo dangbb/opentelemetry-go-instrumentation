@@ -156,7 +156,9 @@ Allow attach probes to user space program's function.
 ### Writing eBPF C code 
 
 Link: [build eBPF program](https://dev.to/pemcconnell/building-an-xdp-ebpf-program-with-c-and-golang-a-step-by-step-guide-4hoa)
--
+
+1. Understand C syntax for eBPF program.
+2. Understand current C program of exists instrumented library. 
 
 ### Research about cilium/ebpf - How it works ? 
 
@@ -169,6 +171,14 @@ Link: [build eBPF program](https://dev.to/pemcconnell/building-an-xdp-ebpf-progr
 - Byte code of ebpf program is embedded into *.go file.
 
 - How it perform substitition ? Can we generalized it into some common usecase ? - Should be able to understand how substitition work.
+
+### Performance analysis 
+
+For general performance analysis:
+- Monitor and observer processing time for each time target function is invoked. The time should compare between existed auto instrumentation tool for that package. E.g:
+  - Package `logrus` is also supported by [helios](https://gethelios.dev/), by [instruction](https://app.gethelios.dev/get-started?_gl=1*1y4wza0*_ga*MzU1Nzc5Mjk2LjE2OTQyNzE0MTg.*_ga_PPRBERX8V9*MTY5NDk2MjUwNy42LjEuMTY5NDk2MjUwOS41OC4wLjA.). So, I will perform an analysis on process time and resource usage by these.
+  - Determined pattern or trend (e.g, metric keeps increasing which is not good and might need some optimization).
+- ...
 
 ### Working on improvement
 
