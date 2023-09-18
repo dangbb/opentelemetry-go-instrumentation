@@ -84,6 +84,6 @@ int uprobe_queryDC(struct pt_regs *ctx) {
     return 0;
 }
 
-// This instrumentation attaches uprobe to the following function:
+// This instrumentation attaches uprobe to the following function, but when function return:
 // func (db *DB) queryDC(ctx, txctx context.Context, dc *driverConn, releaseConn func(error), query string, args []any)
 UPROBE_RETURN(queryDC, struct sql_request_t, 3, 0, sql_events, events)

@@ -1,0 +1,734 @@
+main.(*testStruct).Hello STEXT nosplit size=15 args=0x8 locals=0x0 funcid=0x0 align=0x0
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:21)	TEXT	main.(*testStruct).Hello(SB), NOSPLIT|ABIInternal, $0-8
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:21)	FUNCDATA	$0, gclocals·wgcWObbY2HYnK2SU/U22lA==(SB)
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:21)	FUNCDATA	$1, gclocals·J5F+7Qw7O7ve2QcWC7DpeQ==(SB)
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:21)	FUNCDATA	$5, main.(*testStruct).Hello.arginfo1(SB)
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:21)	MOVQ	AX, main.t+8(SP)
+	0x0005 00005 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:22)	TESTB	AL, (AX)
+	0x0007 00007 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:22)	MOVQ	$1, (AX)
+	0x000e 00014 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:23)	RET
+	0x0000 48 89 44 24 08 84 00 48 c7 00 01 00 00 00 c3     H.D$...H.......
+main.(*testStruct).Hi STEXT nosplit size=16 args=0x8 locals=0x0 funcid=0x0 align=0x0
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:25)	TEXT	main.(*testStruct).Hi(SB), NOSPLIT|ABIInternal, $0-8
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:25)	FUNCDATA	$0, gclocals·wgcWObbY2HYnK2SU/U22lA==(SB)
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:25)	FUNCDATA	$1, gclocals·J5F+7Qw7O7ve2QcWC7DpeQ==(SB)
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:25)	FUNCDATA	$5, main.(*testStruct).Hi.arginfo1(SB)
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:25)	MOVQ	AX, main.t+8(SP)
+	0x0005 00005 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:26)	TESTB	AL, (AX)
+	0x0007 00007 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:26)	MOVQ	$1, 8(AX)
+	0x000f 00015 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:27)	RET
+	0x0000 48 89 44 24 08 84 00 48 c7 40 08 01 00 00 00 c3  H.D$...H.@......
+main.main STEXT size=223 args=0x0 locals=0x90 funcid=0x0 align=0x0
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	TEXT	main.main(SB), ABIInternal, $144-0
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	LEAQ	-16(SP), R12
+	0x0005 00005 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	CMPQ	R12, 16(R14)
+	0x0009 00009 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	PCDATA	$0, $-2
+	0x0009 00009 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	JLS	213
+	0x000f 00015 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	PCDATA	$0, $-1
+	0x000f 00015 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	SUBQ	$144, SP
+	0x0016 00022 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	MOVQ	BP, 136(SP)
+	0x001e 00030 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	LEAQ	136(SP), BP
+	0x0026 00038 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	FUNCDATA	$0, gclocals·J5F+7Qw7O7ve2QcWC7DpeQ==(SB)
+	0x0026 00038 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	FUNCDATA	$1, gclocals·3cq9OUepSBSjIHVDcjq2oQ==(SB)
+	0x0026 00038 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:35)	LEAQ	go:string."12345"(SB), CX
+	0x002d 00045 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:35)	MOVQ	CX, main.str+120(SP)
+	0x0032 00050 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:35)	MOVQ	$5, main.str+128(SP)
+	0x003e 00062 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:37)	MOVUPS	X15, main..autotmp_5+88(SP)
+	0x0044 00068 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:37)	MOVQ	$2, main..autotmp_5+88(SP)
+	0x004d 00077 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:37)	MOVQ	$5, main..autotmp_5+96(SP)
+	0x0056 00086 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:37)	MOVQ	$2, main.p+72(SP)
+	0x005f 00095 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:37)	MOVQ	$5, main.p+80(SP)
+	0x0068 00104 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:38)	LEAQ	type:main.testStruct(SB), AX
+	0x006f 00111 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:38)	PCDATA	$1, $1
+	0x006f 00111 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:38)	CALL	runtime.newobject(SB)
+	0x0074 00116 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:38)	MOVQ	AX, main.&p2+112(SP)
+	0x0079 00121 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:38)	MOVUPS	X15, (AX)
+	0x007d 00125 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:40)	MOVQ	$1, main.i+56(SP)
+	0x0086 00134 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	MOVQ	main.&p2+112(SP), CX
+	0x008b 00139 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	MOVQ	CX, main..autotmp_4+104(SP)
+	0x0090 00144 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	MOVQ	main.i+56(SP), DX
+	0x0095 00149 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	MOVQ	DX, main..autotmp_6+64(SP)
+	0x009a 00154 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	MOVQ	main.str+120(SP), R8
+	0x009f 00159 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	MOVQ	main.str+128(SP), R9
+	0x00a7 00167 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	LEAQ	main.p+72(SP), AX
+	0x00ac 00172 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	LEAQ	go:itab.*<unlinkable>.testStruct,<unlinkable>.testInterface(SB), BX
+	0x00b3 00179 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	LEAQ	type:int(SB), DI
+	0x00ba 00186 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	LEAQ	main..autotmp_6+64(SP), SI
+	0x00bf 00191 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	PCDATA	$1, $0
+	0x00bf 00191 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	NOP
+	0x00c0 00192 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:42)	CALL	main.(*Point).PIncr(SB)
+	0x00c5 00197 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:43)	MOVQ	136(SP), BP
+	0x00cd 00205 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:43)	ADDQ	$144, SP
+	0x00d4 00212 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:43)	RET
+	0x00d5 00213 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:43)	NOP
+	0x00d5 00213 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	PCDATA	$1, $-1
+	0x00d5 00213 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	PCDATA	$0, $-2
+	0x00d5 00213 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	CALL	runtime.morestack_noctxt(SB)
+	0x00da 00218 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	PCDATA	$0, $-1
+	0x00da 00218 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:34)	JMP	0
+	0x0000 4c 8d 64 24 f0 4d 3b 66 10 0f 86 c6 00 00 00 48  L.d$.M;f.......H
+	0x0010 81 ec 90 00 00 00 48 89 ac 24 88 00 00 00 48 8d  ......H..$....H.
+	0x0020 ac 24 88 00 00 00 48 8d 0d 00 00 00 00 48 89 4c  .$....H......H.L
+	0x0030 24 78 48 c7 84 24 80 00 00 00 05 00 00 00 44 0f  $xH..$........D.
+	0x0040 11 7c 24 58 48 c7 44 24 58 02 00 00 00 48 c7 44  .|$XH.D$X....H.D
+	0x0050 24 60 05 00 00 00 48 c7 44 24 48 02 00 00 00 48  $`....H.D$H....H
+	0x0060 c7 44 24 50 05 00 00 00 48 8d 05 00 00 00 00 e8  .D$P....H.......
+	0x0070 00 00 00 00 48 89 44 24 70 44 0f 11 38 48 c7 44  ....H.D$pD..8H.D
+	0x0080 24 38 01 00 00 00 48 8b 4c 24 70 48 89 4c 24 68  $8....H.L$pH.L$h
+	0x0090 48 8b 54 24 38 48 89 54 24 40 4c 8b 44 24 78 4c  H.T$8H.T$@L.D$xL
+	0x00a0 8b 8c 24 80 00 00 00 48 8d 44 24 48 48 8d 1d 00  ..$....H.D$HH...
+	0x00b0 00 00 00 48 8d 3d 00 00 00 00 48 8d 74 24 40 90  ...H.=....H.t$@.
+	0x00c0 e8 00 00 00 00 48 8b ac 24 88 00 00 00 48 81 c4  .....H..$....H..
+	0x00d0 90 00 00 00 c3 e8 00 00 00 00 e9 21 ff ff ff     ...........!...
+	rel 3+0 t=23 type:*main.testStruct+0
+	rel 3+0 t=23 type:int+0
+	rel 41+4 t=14 go:string."12345"+0
+	rel 107+4 t=14 type:main.testStruct+0
+	rel 112+4 t=7 runtime.newobject+0
+	rel 175+4 t=14 go:itab.*<unlinkable>.testStruct,<unlinkable>.testInterface+0
+	rel 182+4 t=14 type:int+0
+	rel 193+4 t=7 main.(*Point).PIncr+0
+	rel 214+4 t=7 runtime.morestack_noctxt+0
+main.(*Point).PIncr STEXT size=477 args=0x38 locals=0x30 funcid=0x0 align=0x0
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	TEXT	main.(*Point).PIncr(SB), ABIInternal, $48-56
+	0x0000 00000 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	CMPQ	SP, 16(R14)
+	0x0004 00004 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	PCDATA	$0, $-2
+	0x0004 00004 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	JLS	397
+	0x000a 00010 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	PCDATA	$0, $-1
+	0x000a 00010 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	SUBQ	$48, SP
+	0x000e 00014 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	BP, 40(SP)
+	0x0013 00019 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	LEAQ	40(SP), BP
+	0x0018 00024 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	FUNCDATA	$0, gclocals·7yTmlZVADCierHf5Nz+qkQ==(SB)
+	0x0018 00024 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	FUNCDATA	$1, gclocals·ykHN0vawYuq1dUW4zEe2gA==(SB)
+	0x0018 00024 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	FUNCDATA	$5, main.(*Point).PIncr.arginfo1(SB)
+	0x0018 00024 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	AX, main.p+56(SP)
+	0x001d 00029 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	BX, main.i+64(SP)
+	0x0022 00034 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	CX, main.i+72(SP)
+	0x0027 00039 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	DI, main.h+80(SP)
+	0x002c 00044 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	SI, main.h+88(SP)
+	0x0031 00049 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	R8, main.str+96(SP)
+	0x0036 00054 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	R9, main.str+104(SP)
+	0x003b 00059 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	$0, main.~r0+24(SP)
+	0x0044 00068 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:51)	MOVQ	main.i+64(SP), CX
+	0x0049 00073 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:51)	TESTB	AL, (CX)
+	0x004b 00075 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:51)	MOVQ	24(CX), CX
+	0x004f 00079 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:51)	MOVQ	main.i+72(SP), AX
+	0x0054 00084 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:51)	PCDATA	$1, $1
+	0x0054 00084 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:51)	CALL	CX
+	0x0056 00086 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	CMPQ	main.str+104(SP), $3
+	0x005c 00092 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JEQ	101
+	0x005e 00094 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	NOP
+	0x0060 00096 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JMP	326
+	0x0065 00101 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	MOVQ	main.str+104(SP), CX
+	0x006a 00106 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	MOVQ	main.str+96(SP), DX
+	0x006f 00111 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	TESTQ	CX, CX
+	0x0072 00114 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JHI	121
+	0x0074 00116 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JMP	389
+	0x0079 00121 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	MOVQ	main.str+104(SP), CX
+	0x007e 00126 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	MOVBLZX	(DX), DX
+	0x0081 00129 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	MOVQ	main.str+96(SP), SI
+	0x0086 00134 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	CMPQ	CX, $1
+	0x008a 00138 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JHI	145
+	0x008c 00140 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JMP	376
+	0x0091 00145 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	MOVBLZX	1(SI), SI
+	0x0095 00149 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	SHLL	$8, SI
+	0x0098 00152 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	ORL	SI, DX
+	0x009a 00154 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	NOP
+	0x00a0 00160 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	CMPW	DX, $12849
+	0x00a5 00165 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JEQ	172
+	0x00a7 00167 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JMP	324
+	0x00ac 00172 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	MOVQ	main.str+104(SP), CX
+	0x00b1 00177 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	MOVQ	main.str+96(SP), DX
+	0x00b6 00182 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	CMPQ	CX, $2
+	0x00ba 00186 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JHI	197
+	0x00bc 00188 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	NOP
+	0x00c0 00192 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JMP	366
+	0x00c5 00197 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	CMPB	2(DX), $51
+	0x00c9 00201 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JEQ	205
+	0x00cb 00203 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JMP	322
+	0x00cd 00205 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:54)	MOVQ	main.p+56(SP), DX
+	0x00d2 00210 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:54)	TESTB	AL, (DX)
+	0x00d4 00212 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:54)	MOVQ	main.p+56(SP), SI
+	0x00d9 00217 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:54)	TESTB	AL, (SI)
+	0x00db 00219 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:54)	MOVQ	(DX), DX
+	0x00de 00222 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:54)	ADDQ	$10, DX
+	0x00e2 00226 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:54)	MOVQ	DX, (SI)
+	0x00e5 00229 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:55)	MOVQ	main.p+56(SP), DX
+	0x00ea 00234 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:55)	TESTB	AL, (DX)
+	0x00ec 00236 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:55)	MOVQ	main.p+56(SP), SI
+	0x00f1 00241 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:55)	TESTB	AL, (SI)
+	0x00f3 00243 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:55)	MOVQ	(DX), DX
+	0x00f6 00246 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:55)	ADDQ	$10, DX
+	0x00fa 00250 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:55)	MOVQ	DX, (SI)
+	0x00fd 00253 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	MOVQ	$0, main..autotmp_5+32(SP)
+	0x0106 00262 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	MOVQ	main.h+80(SP), AX
+	0x010b 00267 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	MOVQ	main.h+88(SP), DX
+	0x0110 00272 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	LEAQ	type:int(SB), BX
+	0x0117 00279 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	CMPQ	AX, BX
+	0x011a 00282 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	JEQ	286
+	0x011c 00284 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	JMP	354
+	0x011e 00286 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	MOVQ	(DX), CX
+	0x0121 00289 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	MOVQ	CX, main..autotmp_5+32(SP)
+	0x0126 00294 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	MOVQ	main.p+56(SP), DX
+	0x012b 00299 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	TESTB	AL, (DX)
+	0x012d 00301 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	MOVQ	main.p+56(SP), BX
+	0x0132 00306 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	TESTB	AL, (BX)
+	0x0134 00308 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	MOVQ	8(DX), DX
+	0x0138 00312 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	ADDQ	DX, CX
+	0x013b 00315 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	MOVQ	CX, 8(BX)
+	0x013f 00319 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	NOP
+	0x0140 00320 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	JMP	330
+	0x0142 00322 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	PCDATA	$1, $-1
+	0x0142 00322 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JMP	328
+	0x0144 00324 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JMP	328
+	0x0146 00326 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JMP	328
+	0x0148 00328 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	JMP	330
+	0x014a 00330 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:59)	MOVQ	$1, main.~r0+24(SP)
+	0x0153 00339 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:59)	MOVL	$1, AX
+	0x0158 00344 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:59)	MOVQ	40(SP), BP
+	0x015d 00349 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:59)	ADDQ	$48, SP
+	0x0161 00353 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:59)	RET
+	0x0162 00354 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	LEAQ	type:interface {}(SB), CX
+	0x0169 00361 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	PCDATA	$1, $2
+	0x0169 00361 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:56)	CALL	runtime.panicdottypeE(SB)
+	0x016e 00366 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	MOVL	$2, AX
+	0x0173 00371 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	CALL	runtime.panicIndex(SB)
+	0x0178 00376 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	MOVL	$1, AX
+	0x017d 00381 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	NOP
+	0x0180 00384 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	CALL	runtime.panicIndex(SB)
+	0x0185 00389 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	XORL	AX, AX
+	0x0187 00391 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	CALL	runtime.panicIndex(SB)
+	0x018c 00396 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	XCHGL	AX, AX
+	0x018d 00397 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:53)	NOP
+	0x018d 00397 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	PCDATA	$1, $-1
+	0x018d 00397 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	PCDATA	$0, $-2
+	0x018d 00397 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	AX, 8(SP)
+	0x0192 00402 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	BX, 16(SP)
+	0x0197 00407 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	CX, 24(SP)
+	0x019c 00412 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	DI, 32(SP)
+	0x01a1 00417 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	SI, 40(SP)
+	0x01a6 00422 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	R8, 48(SP)
+	0x01ab 00427 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	R9, 56(SP)
+	0x01b0 00432 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	CALL	runtime.morestack_noctxt(SB)
+	0x01b5 00437 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	8(SP), AX
+	0x01ba 00442 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	16(SP), BX
+	0x01bf 00447 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	24(SP), CX
+	0x01c4 00452 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	32(SP), DI
+	0x01c9 00457 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	40(SP), SI
+	0x01ce 00462 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	48(SP), R8
+	0x01d3 00467 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	MOVQ	56(SP), R9
+	0x01d8 00472 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	PCDATA	$0, $-1
+	0x01d8 00472 (/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/binary/main.go:50)	JMP	0
+	0x0000 49 3b 66 10 0f 86 83 01 00 00 48 83 ec 30 48 89  I;f.......H..0H.
+	0x0010 6c 24 28 48 8d 6c 24 28 48 89 44 24 38 48 89 5c  l$(H.l$(H.D$8H.\
+	0x0020 24 40 48 89 4c 24 48 48 89 7c 24 50 48 89 74 24  $@H.L$HH.|$PH.t$
+	0x0030 58 4c 89 44 24 60 4c 89 4c 24 68 48 c7 44 24 18  XL.D$`L.L$hH.D$.
+	0x0040 00 00 00 00 48 8b 4c 24 40 84 01 48 8b 49 18 48  ....H.L$@..H.I.H
+	0x0050 8b 44 24 48 ff d1 48 83 7c 24 68 03 74 07 66 90  .D$H..H.|$h.t.f.
+	0x0060 e9 e1 00 00 00 48 8b 4c 24 68 48 8b 54 24 60 48  .....H.L$hH.T$`H
+	0x0070 85 c9 77 05 e9 0c 01 00 00 48 8b 4c 24 68 0f b6  ..w......H.L$h..
+	0x0080 12 48 8b 74 24 60 48 83 f9 01 77 05 e9 e7 00 00  .H.t$`H...w.....
+	0x0090 00 0f b6 76 01 c1 e6 08 09 f2 66 0f 1f 44 00 00  ...v......f..D..
+	0x00a0 66 81 fa 31 32 74 05 e9 98 00 00 00 48 8b 4c 24  f..12t......H.L$
+	0x00b0 68 48 8b 54 24 60 48 83 f9 02 77 09 0f 1f 40 00  hH.T$`H...w...@.
+	0x00c0 e9 a9 00 00 00 80 7a 02 33 74 02 eb 75 48 8b 54  ......z.3t..uH.T
+	0x00d0 24 38 84 02 48 8b 74 24 38 84 06 48 8b 12 48 83  $8..H.t$8..H..H.
+	0x00e0 c2 0a 48 89 16 48 8b 54 24 38 84 02 48 8b 74 24  ..H..H.T$8..H.t$
+	0x00f0 38 84 06 48 8b 12 48 83 c2 0a 48 89 16 48 c7 44  8..H..H...H..H.D
+	0x0100 24 20 00 00 00 00 48 8b 44 24 50 48 8b 54 24 58  $ ....H.D$PH.T$X
+	0x0110 48 8d 1d 00 00 00 00 48 39 d8 74 02 eb 44 48 8b  H......H9.t..DH.
+	0x0120 0a 48 89 4c 24 20 48 8b 54 24 38 84 02 48 8b 5c  .H.L$ H.T$8..H.\
+	0x0130 24 38 84 03 48 8b 52 08 48 01 d1 48 89 4b 08 90  $8..H.R.H..H.K..
+	0x0140 eb 08 eb 04 eb 02 eb 00 eb 00 48 c7 44 24 18 01  ..........H.D$..
+	0x0150 00 00 00 b8 01 00 00 00 48 8b 6c 24 28 48 83 c4  ........H.l$(H..
+	0x0160 30 c3 48 8d 0d 00 00 00 00 e8 00 00 00 00 b8 02  0.H.............
+	0x0170 00 00 00 e8 00 00 00 00 b8 01 00 00 00 0f 1f 00  ................
+	0x0180 e8 00 00 00 00 31 c0 e8 00 00 00 00 90 48 89 44  .....1.......H.D
+	0x0190 24 08 48 89 5c 24 10 48 89 4c 24 18 48 89 7c 24  $.H.\$.H.L$.H.|$
+	0x01a0 20 48 89 74 24 28 4c 89 44 24 30 4c 89 4c 24 38   H.t$(L.D$0L.L$8
+	0x01b0 e8 00 00 00 00 48 8b 44 24 08 48 8b 5c 24 10 48  .....H.D$.H.\$.H
+	0x01c0 8b 4c 24 18 48 8b 7c 24 20 48 8b 74 24 28 4c 8b  .L$.H.|$ H.t$(L.
+	0x01d0 44 24 30 4c 8b 4c 24 38 e9 23 fe ff ff           D$0L.L$8.#...
+	rel 3+0 t=24 type:main.testInterface+96
+	rel 84+0 t=10 +0
+	rel 275+4 t=14 type:int+0
+	rel 357+4 t=14 type:interface {}+0
+	rel 362+4 t=7 runtime.panicdottypeE+0
+	rel 372+4 t=7 runtime.panicIndex+0
+	rel 385+4 t=7 runtime.panicIndex+0
+	rel 392+4 t=7 runtime.panicIndex+0
+	rel 433+4 t=7 runtime.morestack_noctxt+0
+main.testInterface.Hello STEXT dupok size=108 args=0x10 locals=0x10 funcid=0x15 align=0x0
+	0x0000 00000 (<autogenerated>:1)	TEXT	main.testInterface.Hello(SB), DUPOK|WRAPPER|ABIInternal, $16-16
+	0x0000 00000 (<autogenerated>:1)	CMPQ	SP, 16(R14)
+	0x0004 00004 (<autogenerated>:1)	PCDATA	$0, $-2
+	0x0004 00004 (<autogenerated>:1)	JLS	60
+	0x0006 00006 (<autogenerated>:1)	PCDATA	$0, $-1
+	0x0006 00006 (<autogenerated>:1)	SUBQ	$16, SP
+	0x000a 00010 (<autogenerated>:1)	MOVQ	BP, 8(SP)
+	0x000f 00015 (<autogenerated>:1)	LEAQ	8(SP), BP
+	0x0014 00020 (<autogenerated>:1)	MOVQ	32(R14), R12
+	0x0018 00024 (<autogenerated>:1)	TESTQ	R12, R12
+	0x001b 00027 (<autogenerated>:1)	JNE	87
+	0x001d 00029 (<autogenerated>:1)	NOP
+	0x001d 00029 (<autogenerated>:1)	FUNCDATA	$0, gclocals·IuErl7MOXaHVn7EZYWzfFA==(SB)
+	0x001d 00029 (<autogenerated>:1)	FUNCDATA	$1, gclocals·J5F+7Qw7O7ve2QcWC7DpeQ==(SB)
+	0x001d 00029 (<autogenerated>:1)	FUNCDATA	$5, main.testInterface.Hello.arginfo1(SB)
+	0x001d 00029 (<autogenerated>:1)	MOVQ	AX, main..this+24(SP)
+	0x0022 00034 (<autogenerated>:1)	MOVQ	BX, main..this+32(SP)
+	0x0027 00039 (<autogenerated>:1)	TESTB	AL, (AX)
+	0x0029 00041 (<autogenerated>:1)	MOVQ	24(AX), CX
+	0x002d 00045 (<autogenerated>:1)	MOVQ	BX, AX
+	0x0030 00048 (<autogenerated>:1)	PCDATA	$1, $1
+	0x0030 00048 (<autogenerated>:1)	CALL	CX
+	0x0032 00050 (<autogenerated>:1)	MOVQ	8(SP), BP
+	0x0037 00055 (<autogenerated>:1)	ADDQ	$16, SP
+	0x003b 00059 (<autogenerated>:1)	RET
+	0x003c 00060 (<autogenerated>:1)	NOP
+	0x003c 00060 (<autogenerated>:1)	PCDATA	$1, $-1
+	0x003c 00060 (<autogenerated>:1)	PCDATA	$0, $-2
+	0x003c 00060 (<autogenerated>:1)	MOVQ	AX, 8(SP)
+	0x0041 00065 (<autogenerated>:1)	MOVQ	BX, 16(SP)
+	0x0046 00070 (<autogenerated>:1)	CALL	runtime.morestack_noctxt(SB)
+	0x004b 00075 (<autogenerated>:1)	MOVQ	8(SP), AX
+	0x0050 00080 (<autogenerated>:1)	MOVQ	16(SP), BX
+	0x0055 00085 (<autogenerated>:1)	PCDATA	$0, $-1
+	0x0055 00085 (<autogenerated>:1)	JMP	0
+	0x0057 00087 (<autogenerated>:1)	LEAQ	24(SP), R13
+	0x005c 00092 (<autogenerated>:1)	NOP
+	0x0060 00096 (<autogenerated>:1)	CMPQ	(R12), R13
+	0x0064 00100 (<autogenerated>:1)	JNE	29
+	0x0066 00102 (<autogenerated>:1)	MOVQ	SP, (R12)
+	0x006a 00106 (<autogenerated>:1)	JMP	29
+	0x0000 49 3b 66 10 76 36 48 83 ec 10 48 89 6c 24 08 48  I;f.v6H...H.l$.H
+	0x0010 8d 6c 24 08 4d 8b 66 20 4d 85 e4 75 3a 48 89 44  .l$.M.f M..u:H.D
+	0x0020 24 18 48 89 5c 24 20 84 00 48 8b 48 18 48 89 d8  $.H.\$ ..H.H.H..
+	0x0030 ff d1 48 8b 6c 24 08 48 83 c4 10 c3 48 89 44 24  ..H.l$.H....H.D$
+	0x0040 08 48 89 5c 24 10 e8 00 00 00 00 48 8b 44 24 08  .H.\$......H.D$.
+	0x0050 48 8b 5c 24 10 eb a9 4c 8d 6c 24 18 0f 1f 40 00  H.\$...L.l$...@.
+	0x0060 4d 39 2c 24 75 b7 49 89 24 24 eb b1              M9,$u.I.$$..
+	rel 2+0 t=24 type:main.testInterface+96
+	rel 48+0 t=10 +0
+	rel 71+4 t=7 runtime.morestack_noctxt+0
+main.testInterface.Hi STEXT dupok size=108 args=0x10 locals=0x10 funcid=0x15 align=0x0
+	0x0000 00000 (<autogenerated>:1)	TEXT	main.testInterface.Hi(SB), DUPOK|WRAPPER|ABIInternal, $16-16
+	0x0000 00000 (<autogenerated>:1)	CMPQ	SP, 16(R14)
+	0x0004 00004 (<autogenerated>:1)	PCDATA	$0, $-2
+	0x0004 00004 (<autogenerated>:1)	JLS	60
+	0x0006 00006 (<autogenerated>:1)	PCDATA	$0, $-1
+	0x0006 00006 (<autogenerated>:1)	SUBQ	$16, SP
+	0x000a 00010 (<autogenerated>:1)	MOVQ	BP, 8(SP)
+	0x000f 00015 (<autogenerated>:1)	LEAQ	8(SP), BP
+	0x0014 00020 (<autogenerated>:1)	MOVQ	32(R14), R12
+	0x0018 00024 (<autogenerated>:1)	TESTQ	R12, R12
+	0x001b 00027 (<autogenerated>:1)	JNE	87
+	0x001d 00029 (<autogenerated>:1)	NOP
+	0x001d 00029 (<autogenerated>:1)	FUNCDATA	$0, gclocals·IuErl7MOXaHVn7EZYWzfFA==(SB)
+	0x001d 00029 (<autogenerated>:1)	FUNCDATA	$1, gclocals·J5F+7Qw7O7ve2QcWC7DpeQ==(SB)
+	0x001d 00029 (<autogenerated>:1)	FUNCDATA	$5, main.testInterface.Hi.arginfo1(SB)
+	0x001d 00029 (<autogenerated>:1)	MOVQ	AX, main..this+24(SP)
+	0x0022 00034 (<autogenerated>:1)	MOVQ	BX, main..this+32(SP)
+	0x0027 00039 (<autogenerated>:1)	TESTB	AL, (AX)
+	0x0029 00041 (<autogenerated>:1)	MOVQ	32(AX), CX
+	0x002d 00045 (<autogenerated>:1)	MOVQ	BX, AX
+	0x0030 00048 (<autogenerated>:1)	PCDATA	$1, $1
+	0x0030 00048 (<autogenerated>:1)	CALL	CX
+	0x0032 00050 (<autogenerated>:1)	MOVQ	8(SP), BP
+	0x0037 00055 (<autogenerated>:1)	ADDQ	$16, SP
+	0x003b 00059 (<autogenerated>:1)	RET
+	0x003c 00060 (<autogenerated>:1)	NOP
+	0x003c 00060 (<autogenerated>:1)	PCDATA	$1, $-1
+	0x003c 00060 (<autogenerated>:1)	PCDATA	$0, $-2
+	0x003c 00060 (<autogenerated>:1)	MOVQ	AX, 8(SP)
+	0x0041 00065 (<autogenerated>:1)	MOVQ	BX, 16(SP)
+	0x0046 00070 (<autogenerated>:1)	CALL	runtime.morestack_noctxt(SB)
+	0x004b 00075 (<autogenerated>:1)	MOVQ	8(SP), AX
+	0x0050 00080 (<autogenerated>:1)	MOVQ	16(SP), BX
+	0x0055 00085 (<autogenerated>:1)	PCDATA	$0, $-1
+	0x0055 00085 (<autogenerated>:1)	JMP	0
+	0x0057 00087 (<autogenerated>:1)	LEAQ	24(SP), R13
+	0x005c 00092 (<autogenerated>:1)	NOP
+	0x0060 00096 (<autogenerated>:1)	CMPQ	(R12), R13
+	0x0064 00100 (<autogenerated>:1)	JNE	29
+	0x0066 00102 (<autogenerated>:1)	MOVQ	SP, (R12)
+	0x006a 00106 (<autogenerated>:1)	JMP	29
+	0x0000 49 3b 66 10 76 36 48 83 ec 10 48 89 6c 24 08 48  I;f.v6H...H.l$.H
+	0x0010 8d 6c 24 08 4d 8b 66 20 4d 85 e4 75 3a 48 89 44  .l$.M.f M..u:H.D
+	0x0020 24 18 48 89 5c 24 20 84 00 48 8b 48 20 48 89 d8  $.H.\$ ..H.H H..
+	0x0030 ff d1 48 8b 6c 24 08 48 83 c4 10 c3 48 89 44 24  ..H.l$.H....H.D$
+	0x0040 08 48 89 5c 24 10 e8 00 00 00 00 48 8b 44 24 08  .H.\$......H.D$.
+	0x0050 48 8b 5c 24 10 eb a9 4c 8d 6c 24 18 0f 1f 40 00  H.\$...L.l$...@.
+	0x0060 4d 39 2c 24 75 b7 49 89 24 24 eb b1              M9,$u.I.$$..
+	rel 2+0 t=24 type:main.testInterface+104
+	rel 48+0 t=10 +0
+	rel 71+4 t=7 runtime.morestack_noctxt+0
+go:cuinfo.producer.<unlinkable> SDWARFCUINFO dupok size=0
+	0x0000 2d 4e 20 2d 6c 20 72 65 67 61 62 69              -N -l regabi
+runtime.memequal64·f SRODATA dupok size=8
+	0x0000 00 00 00 00 00 00 00 00                          ........
+	rel 0+8 t=1 runtime.memequal64+0
+runtime.gcbits.0100000000000000 SRODATA dupok size=8
+	0x0000 01 00 00 00 00 00 00 00                          ........
+type:.namedata.*func()- SRODATA dupok size=9
+	0x0000 00 07 2a 66 75 6e 63 28 29                       ..*func()
+type:*func() SRODATA dupok size=56
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 75 ac 29 27 08 08 08 36 00 00 00 00 00 00 00 00  u.)'...6........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=1 runtime.memequal64·f+0
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*func()-+0
+	rel 48+8 t=1 type:func()+0
+type:func() SRODATA dupok size=56
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 fe fa b9 80 02 08 08 33 00 00 00 00 00 00 00 00  .......3........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00                                      ....
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*func()-+0
+	rel 44+4 t=-32763 type:*func()+0
+runtime.interequal·f SRODATA dupok size=8
+	0x0000 00 00 00 00 00 00 00 00                          ........
+	rel 0+8 t=1 runtime.interequal+0
+type:.namedata.*main.testInterface- SRODATA dupok size=21
+	0x0000 00 13 2a 6d 61 69 6e 2e 74 65 73 74 49 6e 74 65  ..*main.testInte
+	0x0010 72 66 61 63 65                                   rface
+type:*<unlinkable>.testInterface SRODATA size=56
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 5f 15 2f e9 08 08 08 36 00 00 00 00 00 00 00 00  _./....6........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=1 runtime.memequal64·f+0
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*main.testInterface-+0
+	rel 48+8 t=1 type:<unlinkable>.testInterface+0
+runtime.gcbits.0200000000000000 SRODATA dupok size=8
+	0x0000 02 00 00 00 00 00 00 00                          ........
+type:.importpath.<unlinkable>. SRODATA dupok size=14
+	0x0000 00 0c 3c 75 6e 6c 69 6e 6b 61 62 6c 65 3e        ..<unlinkable>
+type:.namedata.Hello. SRODATA dupok size=7
+	0x0000 01 05 48 65 6c 6c 6f                             ..Hello
+type:.namedata.Hi. SRODATA dupok size=4
+	0x0000 01 02 48 69                                      ..Hi
+type:<unlinkable>.testInterface SRODATA size=112
+	0x0000 10 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00  ................
+	0x0010 1f 51 23 bb 07 08 08 14 00 00 00 00 00 00 00 00  .Q#.............
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0040 02 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00  ................
+	0x0050 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00  ........ .......
+	0x0060 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	rel 24+8 t=1 runtime.interequal·f+0
+	rel 32+8 t=1 runtime.gcbits.0200000000000000+0
+	rel 40+4 t=5 type:.namedata.*main.testInterface-+0
+	rel 44+4 t=5 type:*<unlinkable>.testInterface+0
+	rel 48+8 t=1 type:.importpath.<unlinkable>.+0
+	rel 56+8 t=1 type:<unlinkable>.testInterface+96
+	rel 80+4 t=5 type:.importpath.<unlinkable>.+0
+	rel 96+4 t=5 type:.namedata.Hello.+0
+	rel 100+4 t=5 type:func()+0
+	rel 104+4 t=5 type:.namedata.Hi.+0
+	rel 108+4 t=5 type:func()+0
+runtime.memequal128·f SRODATA dupok size=8
+	0x0000 00 00 00 00 00 00 00 00                          ........
+	rel 0+8 t=1 runtime.memequal128+0
+runtime.gcbits. SRODATA dupok size=0
+type:.namedata.*main.testStruct- SRODATA dupok size=18
+	0x0000 00 10 2a 6d 61 69 6e 2e 74 65 73 74 53 74 72 75  ..*main.testStru
+	0x0010 63 74                                            ct
+type:.namedata.a- SRODATA dupok size=3
+	0x0000 00 01 61                                         ..a
+type:.namedata.b- SRODATA dupok size=3
+	0x0000 00 01 62                                         ..b
+type:<unlinkable>.testStruct SRODATA size=144
+	0x0000 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0010 71 7b 13 e9 0f 08 08 19 00 00 00 00 00 00 00 00  q{..............
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0040 02 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00  ................
+	0x0050 00 00 00 00 00 00 00 00 40 00 00 00 00 00 00 00  ........@.......
+	0x0060 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0070 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0080 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	rel 24+8 t=1 runtime.memequal128·f+0
+	rel 32+8 t=1 runtime.gcbits.+0
+	rel 40+4 t=5 type:.namedata.*main.testStruct-+0
+	rel 44+4 t=5 type:*<unlinkable>.testStruct+0
+	rel 48+8 t=1 type:.importpath.<unlinkable>.+0
+	rel 56+8 t=1 type:<unlinkable>.testStruct+96
+	rel 80+4 t=5 type:.importpath.<unlinkable>.+0
+	rel 96+8 t=1 type:.namedata.a-+0
+	rel 104+8 t=1 type:int+0
+	rel 120+8 t=1 type:.namedata.b-+0
+	rel 128+8 t=1 type:int+0
+type:.namedata.*func(*main.testStruct)- SRODATA dupok size=25
+	0x0000 00 17 2a 66 75 6e 63 28 2a 6d 61 69 6e 2e 74 65  ..*func(*main.te
+	0x0010 73 74 53 74 72 75 63 74 29                       stStruct)
+type:*func(*<unlinkable>.testStruct) SRODATA dupok size=56
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 6f 90 93 f6 08 08 08 36 00 00 00 00 00 00 00 00  o......6........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=1 runtime.memequal64·f+0
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*func(*main.testStruct)-+0
+	rel 48+8 t=1 type:func(*<unlinkable>.testStruct)+0
+type:func(*<unlinkable>.testStruct) SRODATA dupok size=64
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 38 89 17 32 02 08 08 33 00 00 00 00 00 00 00 00  8..2...3........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*func(*main.testStruct)-+0
+	rel 44+4 t=-32763 type:*func(*<unlinkable>.testStruct)+0
+	rel 56+8 t=1 type:*<unlinkable>.testStruct+0
+type:*<unlinkable>.testStruct SRODATA size=104
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 5c 90 f0 12 09 08 08 36 00 00 00 00 00 00 00 00  \......6........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00 00 00 00 00 02 00 02 00  ................
+	0x0040 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0050 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0060 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=1 runtime.memequal64·f+0
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*main.testStruct-+0
+	rel 48+8 t=1 type:<unlinkable>.testStruct+0
+	rel 56+4 t=5 type:.importpath.<unlinkable>.+0
+	rel 72+4 t=5 type:.namedata.Hello.+0
+	rel 76+4 t=26 type:func()+0
+	rel 80+4 t=26 <unlinkable>.(*testStruct).Hello+0
+	rel 84+4 t=26 <unlinkable>.(*testStruct).Hello+0
+	rel 88+4 t=5 type:.namedata.Hi.+0
+	rel 92+4 t=26 type:func()+0
+	rel 96+4 t=26 <unlinkable>.(*testStruct).Hi+0
+	rel 100+4 t=26 <unlinkable>.(*testStruct).Hi+0
+go:itab.*<unlinkable>.testStruct,<unlinkable>.testInterface SRODATA dupok size=40
+	0x0000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0010 5c 90 f0 12 00 00 00 00 00 00 00 00 00 00 00 00  \...............
+	0x0020 00 00 00 00 00 00 00 00                          ........
+	rel 0+8 t=1 type:<unlinkable>.testInterface+0
+	rel 8+8 t=1 type:*<unlinkable>.testStruct+0
+	rel 24+8 t=-32767 <unlinkable>.(*testStruct).Hello+0
+	rel 32+8 t=-32767 <unlinkable>.(*testStruct).Hi+0
+go:cuinfo.packagename.main SDWARFCUINFO dupok size=0
+	0x0000 6d 61 69 6e                                      main
+main..inittask SNOPTRDATA size=24
+	0x0000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0010 00 00 00 00 00 00 00 00                          ........
+go:string."12345" SRODATA dupok size=5
+	0x0000 31 32 33 34 35                                   12345
+type:*main.testInterface SRODATA size=56
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 ac 2d 02 0e 08 08 08 36 00 00 00 00 00 00 00 00  .-.....6........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=1 runtime.memequal64·f+0
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*main.testInterface-+0
+	rel 48+8 t=1 type:main.testInterface+0
+type:main.testInterface SRODATA size=112
+	0x0000 10 00 00 00 00 00 00 00 10 00 00 00 00 00 00 00  ................
+	0x0010 13 67 96 2f 07 08 08 14 00 00 00 00 00 00 00 00  .g./............
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0040 02 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00  ................
+	0x0050 00 00 00 00 00 00 00 00 20 00 00 00 00 00 00 00  ........ .......
+	0x0060 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	rel 24+8 t=1 runtime.interequal·f+0
+	rel 32+8 t=1 runtime.gcbits.0200000000000000+0
+	rel 40+4 t=5 type:.namedata.*main.testInterface-+0
+	rel 44+4 t=5 type:*main.testInterface+0
+	rel 48+8 t=1 type:.importpath.<unlinkable>.+0
+	rel 56+8 t=1 type:main.testInterface+96
+	rel 80+4 t=5 type:.importpath.<unlinkable>.+0
+	rel 96+4 t=5 type:.namedata.Hello.+0
+	rel 100+4 t=5 type:func()+0
+	rel 104+4 t=5 type:.namedata.Hi.+0
+	rel 108+4 t=5 type:func()+0
+type:.namedata.*main.Point. SRODATA dupok size=13
+	0x0000 01 0b 2a 6d 61 69 6e 2e 50 6f 69 6e 74           ..*main.Point
+type:.namedata.*func(*main.Point, main.testInterface, interface {}, string) int- SRODATA dupok size=66
+	0x0000 00 40 2a 66 75 6e 63 28 2a 6d 61 69 6e 2e 50 6f  .@*func(*main.Po
+	0x0010 69 6e 74 2c 20 6d 61 69 6e 2e 74 65 73 74 49 6e  int, main.testIn
+	0x0020 74 65 72 66 61 63 65 2c 20 69 6e 74 65 72 66 61  terface, interfa
+	0x0030 63 65 20 7b 7d 2c 20 73 74 72 69 6e 67 29 20 69  ce {}, string) i
+	0x0040 6e 74                                            nt
+type:*func(*main.Point, main.testInterface, interface {}, string) int SRODATA dupok size=56
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 67 a2 e9 17 08 08 08 36 00 00 00 00 00 00 00 00  g......6........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=1 runtime.memequal64·f+0
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*func(*main.Point, main.testInterface, interface {}, string) int-+0
+	rel 48+8 t=1 type:func(*main.Point, main.testInterface, interface {}, string) int+0
+type:func(*main.Point, main.testInterface, interface {}, string) int SRODATA dupok size=96
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 41 e8 5c c2 02 08 08 33 00 00 00 00 00 00 00 00  A.\....3........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 04 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0040 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0050 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*func(*main.Point, main.testInterface, interface {}, string) int-+0
+	rel 44+4 t=-32763 type:*func(*main.Point, main.testInterface, interface {}, string) int+0
+	rel 56+8 t=1 type:*main.Point+0
+	rel 64+8 t=1 type:main.testInterface+0
+	rel 72+8 t=1 type:interface {}+0
+	rel 80+8 t=1 type:string+0
+	rel 88+8 t=1 type:int+0
+type:.namedata.PIncr. SRODATA dupok size=7
+	0x0000 01 05 50 49 6e 63 72                             ..PIncr
+type:.namedata.*func(main.testInterface, interface {}, string) int- SRODATA dupok size=53
+	0x0000 00 33 2a 66 75 6e 63 28 6d 61 69 6e 2e 74 65 73  .3*func(main.tes
+	0x0010 74 49 6e 74 65 72 66 61 63 65 2c 20 69 6e 74 65  tInterface, inte
+	0x0020 72 66 61 63 65 20 7b 7d 2c 20 73 74 72 69 6e 67  rface {}, string
+	0x0030 29 20 69 6e 74                                   ) int
+type:*func(main.testInterface, interface {}, string) int SRODATA dupok size=56
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 69 4f a3 d4 08 08 08 36 00 00 00 00 00 00 00 00  iO.....6........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=1 runtime.memequal64·f+0
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*func(main.testInterface, interface {}, string) int-+0
+	rel 48+8 t=1 type:func(main.testInterface, interface {}, string) int+0
+type:func(main.testInterface, interface {}, string) int SRODATA dupok size=88
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 e9 08 7a fa 02 08 08 33 00 00 00 00 00 00 00 00  ..z....3........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 03 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0040 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0050 00 00 00 00 00 00 00 00                          ........
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*func(main.testInterface, interface {}, string) int-+0
+	rel 44+4 t=-32763 type:*func(main.testInterface, interface {}, string) int+0
+	rel 56+8 t=1 type:main.testInterface+0
+	rel 64+8 t=1 type:interface {}+0
+	rel 72+8 t=1 type:string+0
+	rel 80+8 t=1 type:int+0
+type:*main.Point SRODATA size=88
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 cc 45 73 b0 09 08 08 36 00 00 00 00 00 00 00 00  .Es....6........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00 00 00 00 00 01 00 01 00  ................
+	0x0040 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0050 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=1 runtime.memequal64·f+0
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*main.Point.+0
+	rel 48+8 t=1 type:main.Point+0
+	rel 56+4 t=5 type:.importpath.<unlinkable>.+0
+	rel 72+4 t=5 type:.namedata.PIncr.+0
+	rel 76+4 t=26 type:func(main.testInterface, interface {}, string) int+0
+	rel 80+4 t=26 main.(*Point).PIncr+0
+	rel 84+4 t=26 main.(*Point).PIncr+0
+type:.namedata.X. SRODATA dupok size=3
+	0x0000 01 01 58                                         ..X
+type:.namedata.Y. SRODATA dupok size=3
+	0x0000 01 01 59                                         ..Y
+type:main.Point SRODATA size=144
+	0x0000 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0010 2d 8e 26 91 0f 08 08 19 00 00 00 00 00 00 00 00  -.&.............
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0040 02 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00  ................
+	0x0050 00 00 00 00 00 00 00 00 40 00 00 00 00 00 00 00  ........@.......
+	0x0060 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0070 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0080 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	rel 24+8 t=1 runtime.memequal128·f+0
+	rel 32+8 t=1 runtime.gcbits.+0
+	rel 40+4 t=5 type:.namedata.*main.Point.+0
+	rel 44+4 t=5 type:*main.Point+0
+	rel 56+8 t=1 type:main.Point+96
+	rel 80+4 t=5 type:.importpath.<unlinkable>.+0
+	rel 96+8 t=1 type:.namedata.X.+0
+	rel 104+8 t=1 type:int+0
+	rel 120+8 t=1 type:.namedata.Y.+0
+	rel 128+8 t=1 type:int+0
+type:*func(*main.testStruct) SRODATA dupok size=56
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 80 e2 c0 9f 08 08 08 36 00 00 00 00 00 00 00 00  .......6........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=1 runtime.memequal64·f+0
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*func(*main.testStruct)-+0
+	rel 48+8 t=1 type:func(*main.testStruct)+0
+type:func(*main.testStruct) SRODATA dupok size=64
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 f1 c6 34 21 02 08 08 33 00 00 00 00 00 00 00 00  ..4!...3........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*func(*main.testStruct)-+0
+	rel 44+4 t=-32763 type:*func(*main.testStruct)+0
+	rel 56+8 t=1 type:*main.testStruct+0
+type:*main.testStruct SRODATA size=104
+	0x0000 08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	0x0010 fc 3d 1b d6 09 08 08 36 00 00 00 00 00 00 00 00  .=.....6........
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00 00 00 00 00 02 00 02 00  ................
+	0x0040 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0050 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0060 00 00 00 00 00 00 00 00                          ........
+	rel 24+8 t=1 runtime.memequal64·f+0
+	rel 32+8 t=1 runtime.gcbits.0100000000000000+0
+	rel 40+4 t=5 type:.namedata.*main.testStruct-+0
+	rel 48+8 t=1 type:main.testStruct+0
+	rel 56+4 t=5 type:.importpath.<unlinkable>.+0
+	rel 72+4 t=5 type:.namedata.Hello.+0
+	rel 76+4 t=26 type:func()+0
+	rel 80+4 t=26 main.(*testStruct).Hello+0
+	rel 84+4 t=26 main.(*testStruct).Hello+0
+	rel 88+4 t=5 type:.namedata.Hi.+0
+	rel 92+4 t=26 type:func()+0
+	rel 96+4 t=26 main.(*testStruct).Hi+0
+	rel 100+4 t=26 main.(*testStruct).Hi+0
+type:main.testStruct SRODATA size=144
+	0x0000 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0010 fb 6e 93 aa 0f 08 08 19 00 00 00 00 00 00 00 00  .n..............
+	0x0020 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0030 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0040 02 00 00 00 00 00 00 00 02 00 00 00 00 00 00 00  ................
+	0x0050 00 00 00 00 00 00 00 00 40 00 00 00 00 00 00 00  ........@.......
+	0x0060 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0070 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+	0x0080 00 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00  ................
+	rel 24+8 t=1 runtime.memequal128·f+0
+	rel 32+8 t=1 runtime.gcbits.+0
+	rel 40+4 t=5 type:.namedata.*main.testStruct-+0
+	rel 44+4 t=5 type:*main.testStruct+0
+	rel 48+8 t=1 type:.importpath.<unlinkable>.+0
+	rel 56+8 t=1 type:main.testStruct+96
+	rel 80+4 t=5 type:.importpath.<unlinkable>.+0
+	rel 96+8 t=1 type:.namedata.a-+0
+	rel 104+8 t=1 type:int+0
+	rel 120+8 t=1 type:.namedata.b-+0
+	rel 128+8 t=1 type:int+0
+gclocals·wgcWObbY2HYnK2SU/U22lA== SRODATA dupok size=10
+	0x0000 02 00 00 00 01 00 00 00 01 00                    ..........
+gclocals·J5F+7Qw7O7ve2QcWC7DpeQ== SRODATA dupok size=8
+	0x0000 02 00 00 00 00 00 00 00                          ........
+main.(*testStruct).Hello.arginfo1 SRODATA static dupok size=3
+	0x0000 00 08 ff                                         ...
+main.(*testStruct).Hi.arginfo1 SRODATA static dupok size=3
+	0x0000 00 08 ff                                         ...
+gclocals·3cq9OUepSBSjIHVDcjq2oQ== SRODATA dupok size=10
+	0x0000 02 00 00 00 04 00 00 00 00 04                    ..........
+gclocals·7yTmlZVADCierHf5Nz+qkQ== SRODATA dupok size=11
+	0x0000 03 00 00 00 06 00 00 00 35 31 00                 ........51.
+gclocals·ykHN0vawYuq1dUW4zEe2gA== SRODATA dupok size=8
+	0x0000 03 00 00 00 00 00 00 00                          ........
+main.(*Point).PIncr.arginfo1 SRODATA static dupok size=21
+	0x0000 00 08 fe 08 08 10 08 fd fe 18 08 20 08 fd fe 28  ........... ...(
+	0x0010 08 30 08 fd ff                                   .0...
+gclocals·IuErl7MOXaHVn7EZYWzfFA== SRODATA dupok size=10
+	0x0000 02 00 00 00 02 00 00 00 02 00                    ..........
+main.testInterface.Hello.arginfo1 SRODATA static dupok size=7
+	0x0000 fe 00 08 08 08 fd ff                             .......
+main.testInterface.Hi.arginfo1 SRODATA static dupok size=7
+	0x0000 fe 00 08 08 08 fd ff                             .......
