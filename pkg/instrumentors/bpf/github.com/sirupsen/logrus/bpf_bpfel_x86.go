@@ -12,6 +12,11 @@ import (
 	"github.com/cilium/ebpf"
 )
 
+type bpfSpanContext struct {
+	TraceID [16]uint8
+	SpanID  [8]uint8
+}
+
 // loadBpf returns the embedded CollectionSpec for bpf.
 func loadBpf() (*ebpf.CollectionSpec, error) {
 	reader := bytes.NewReader(_BpfBytes)
@@ -53,12 +58,16 @@ type bpfSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfProgramSpecs struct {
+	UprobeLogrusEntryLog *ebpf.ProgramSpec `ebpf:"uprobe_Logrus_EntryLog"`
 }
 
 // bpfMapSpecs contains maps before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
+	Events           *ebpf.MapSpec `ebpf:"events"`
+	TrackedSpans     *ebpf.MapSpec `ebpf:"tracked_spans"`
+	TrackedSpansBySc *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
 }
 
 // bpfObjects contains all objects after they have been loaded into the kernel.
@@ -80,20 +89,30 @@ func (o *bpfObjects) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
+	Events           *ebpf.Map `ebpf:"events"`
+	TrackedSpans     *ebpf.Map `ebpf:"tracked_spans"`
+	TrackedSpansBySc *ebpf.Map `ebpf:"tracked_spans_by_sc"`
 }
 
 func (m *bpfMaps) Close() error {
-	return _BpfClose()
+	return _BpfClose(
+		m.Events,
+		m.TrackedSpans,
+		m.TrackedSpansBySc,
+	)
 }
 
 // bpfPrograms contains all programs after they have been loaded into the kernel.
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfPrograms struct {
+	UprobeLogrusEntryLog *ebpf.Program `ebpf:"uprobe_Logrus_EntryLog"`
 }
 
 func (p *bpfPrograms) Close() error {
-	return _BpfClose()
+	return _BpfClose(
+		p.UprobeLogrusEntryLog,
+	)
 }
 
 func _BpfClose(closers ...io.Closer) error {
