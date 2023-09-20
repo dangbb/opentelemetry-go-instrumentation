@@ -1,8 +1,23 @@
-// Import necessary libraries
+// Copyright The OpenTelemetry Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "arguments.h"
 #include "span_context.h"
 #include "go_context.h"
 #include "uprobe.h"
+
+char __license[] SEC("license") = "Dual MIT/GPL";
 
 #define MAX_LOG_SIZE 100
 #define MAX_CONCURRENT 50
@@ -15,8 +30,17 @@ struct log_event_t {
 };
 
 struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __type(key, void *);
+    __type(value, struct log_event_t);
+    __uint(max_entries, MAX_CONCURRENT);
+} log_events SEC(".maps");
+
+struct {
     __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
 } events SEC(".maps"); // handle checkpoint at the return of function
+
+const struct log_event_t *unused __attribute__((unused));
 
 // Define main function to extract information
 // Attach probe at function:
