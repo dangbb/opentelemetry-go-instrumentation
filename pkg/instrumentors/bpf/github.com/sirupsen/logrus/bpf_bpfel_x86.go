@@ -68,7 +68,7 @@ type bpfSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfProgramSpecs struct {
-	UprobeLogrusEntryLog *ebpf.ProgramSpec `ebpf:"uprobe_Logrus_EntryLog"`
+	UprobeLogrusEntryWrite *ebpf.ProgramSpec `ebpf:"uprobe_Logrus_EntryWrite"`
 }
 
 // bpfMapSpecs contains maps before they are loaded into the kernel.
@@ -119,12 +119,12 @@ func (m *bpfMaps) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfPrograms struct {
-	UprobeLogrusEntryLog *ebpf.Program `ebpf:"uprobe_Logrus_EntryLog"`
+	UprobeLogrusEntryWrite *ebpf.Program `ebpf:"uprobe_Logrus_EntryWrite"`
 }
 
 func (p *bpfPrograms) Close() error {
 	return _BpfClose(
-		p.UprobeLogrusEntryLog,
+		p.UprobeLogrusEntryWrite,
 	)
 }
 

@@ -11,6 +11,7 @@
 - Đối với kiểu interface {}, cần 2 biến.
   - đầu tiên là trỏ tới kiểu 
   - Thứ 2 là trỏ tới con trỏ của interface 
+- Đối với kiểu map ?
 
 ## Áp dụng ví dụ với các thư viện đã được xâm nhập 
 

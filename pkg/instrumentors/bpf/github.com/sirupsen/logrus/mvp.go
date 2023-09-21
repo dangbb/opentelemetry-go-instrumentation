@@ -55,7 +55,7 @@ func RunEBPF(binPath string, symbol string, targetPID uint64) {
 		log.Fatalf("opening executable: %s", err)
 	}
 
-	up, err := ex.Uprobe(symbol, objs.UprobeLogrusEntryLog, nil)
+	up, err := ex.Uprobe(symbol, objs.UprobeLogrusEntryWrite, nil)
 	if err != nil {
 		log.Fatalf("creating uretprobe: %s", err)
 	}

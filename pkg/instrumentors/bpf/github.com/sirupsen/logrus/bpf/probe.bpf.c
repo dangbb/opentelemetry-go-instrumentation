@@ -48,26 +48,70 @@ const struct log_event_t *unused __attribute__((unused));
 // We would want to extract `level` and `msg`, so the offset should be
 // 2, 3 and 4. (2 for level, 3 for string content and 4 for string length).
 // 1 is pointer to entry.
-SEC("uprobe/Logrus_EntryLog")
-int uprobe_Logrus_EntryLog(struct pt_regs *ctx) { // take list of register and stack as input
-    u64 level_pos = 2;
-    u64 str_ptr_pos = 3;
-    u64 str_len_pos = 4;
+
+//SEC("uprobe/Logrus_EntryLog")
+//int uprobe_Logrus_EntryLog(struct pt_regs *ctx) { // take list of register and stack as input
+//    u64 level_pos = 2;
+//    u64 str_ptr_pos = 3;
+//    u64 str_len_pos = 4;
+//
+//    struct log_event_t logEvent = {};
+//    logEvent.start_time = bpf_ktime_get_ns();
+//
+//    // get level position
+//    logEvent.level = (u64)get_argument(ctx, level_pos);
+//
+//    // get string length and string content
+//    void *str_ptr = get_argument(ctx, str_ptr_pos);
+//    u64 str_len = (u64)get_argument(ctx, str_len_pos);
+//    u64 str_size = MAX_LOG_SIZE < str_len ? MAX_LOG_SIZE : str_len;
+//    bpf_probe_read(logEvent.log, str_size, str_ptr);
+//
+//    // set span context
+//    logEvent.sc = generate_span_context();
+//
+//    // add to perf map
+//    // BPF_F_CURRENT_CPU flaf option ?
+//    bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &logEvent, sizeof(logEvent));
+//    return 0;
+//};
+
+// Define main function to extract information
+// Attach probe at function:
+// `func (entry *Entry) write() {...}`
+// Extract entry pointer at 1. Then extract Level at 6, and Message & Length at 8 and 9
+
+SEC("uprobe/Logrus_EntryWrite")
+int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and stack as input
+    u64 entry_ptr_pos = 1;
 
     struct log_event_t logEvent = {};
     logEvent.start_time = bpf_ktime_get_ns();
 
     // get level position
-    logEvent.level = (u64)get_argument(ctx, level_pos);
+    void *entry_ptr = get_argument(ctx, entry_ptr_pos);
 
-    // get string length and string content
-    void *str_ptr = get_argument(ctx, str_ptr_pos);
-    u64 str_len = (u64)get_argument(ctx, str_len_pos);
-    u64 str_size = MAX_LOG_SIZE < str_len ? MAX_LOG_SIZE : str_len;
-    bpf_probe_read(logEvent.log, str_size, str_ptr);
+    bpf_probe_read(&logEvent.level, sizeof(logEvent.level), (void *)(entry_ptr + 5 * 8));
 
-    // set span context
-    logEvent.sc = generate_span_context();
+    u64 level = 0;
+    bpf_probe_read(&level, sizeof(level), (void *)(entry_ptr + 5 * 8));
+    bpf_printk("Show level 2 %llu\n", level);
+
+    bpf_probe_read(&level, sizeof(level), (void *)(entry_ptr + 4 * 8));
+    bpf_printk("Show level 2 %llu\n", level);
+
+    bpf_probe_read(&level, sizeof(level), (void *)(entry_ptr + 3 * 8));
+    bpf_printk("Show level 3 %llu\n", level);
+
+    bpf_probe_read(&level, sizeof(level), (void *)(entry_ptr + 2 * 8));
+    bpf_printk("Show level 2 %llu\n", level);
+
+    u64 msg_len = 0;
+    bpf_probe_read(&msg_len, sizeof(msg_len), (void *)(entry_ptr + 8 * 8));
+    msg_len = msg_len > MAX_LOG_SIZE ? MAX_LOG_SIZE : msg_len;
+    void *path_ptr = 0;
+    bpf_probe_read(&path_ptr, sizeof(path_ptr), (void *)(entry_ptr + 7 * 8));
+    bpf_probe_read(&logEvent.log, msg_len, path_ptr);
 
     // add to perf map
     // BPF_F_CURRENT_CPU flaf option ?

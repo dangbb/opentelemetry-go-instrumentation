@@ -31,6 +31,8 @@ type testInterface interface {
 	Hi()
 }
 
+type Fields map[string]interface{}
+
 func main() {
 	str := "12345"
 
@@ -40,6 +42,13 @@ func main() {
 	i := 1
 
 	p.PIncr(&p2, i, str)
+
+	c := Fields{}
+	TestField(c)
+}
+
+func TestField(c Fields) {
+	c["a"] = 1
 }
 
 type Point struct {
