@@ -19,101 +19,196 @@
 // //- Implement eBPF instrumentation for logrus library.
 package logrus
 
-//
-//import (
-//	"github.com/cilium/ebpf"
-//	"github.com/cilium/ebpf/link"
-//	"github.com/cilium/ebpf/perf"
-//	"go.opentelemetry.io/auto/pkg/instrumentors/bpffs"
-//	"go.opentelemetry.io/auto/pkg/instrumentors/context"
-//	"go.opentelemetry.io/auto/pkg/instrumentors/utils"
-//	"os"
-//)
-//
+import (
+	"bytes"
+	"encoding/binary"
+	"errors"
+	"os"
+
+	"github.com/cilium/ebpf"
+	"github.com/cilium/ebpf/link"
+	"github.com/cilium/ebpf/perf"
+	logrus_lib "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sys/unix"
+
+	"go.opentelemetry.io/auto/pkg/inject"
+	"go.opentelemetry.io/auto/pkg/instrumentors/bpffs"
+	"go.opentelemetry.io/auto/pkg/instrumentors/context"
+	"go.opentelemetry.io/auto/pkg/instrumentors/events"
+	"go.opentelemetry.io/auto/pkg/instrumentors/utils"
+	"go.opentelemetry.io/auto/pkg/log"
+)
+
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target amd64,arm64 -cc clang -cflags $CFLAGS bpf ./bpf/probe.bpf.c
-//
-//const instrumentedPkg = "sirupsen/logrus"
-//
-//type Event struct {
-//	context.BaseSpanProperties
-//	level uint64
-//	log   [100]byte
-//}
-//
-//type Instrumentor struct {
-//	bpfObjects   *bpfObjects
-//	uprobes      []link.Link
-//	returnProbes []link.Link
-//	eventReader  *perf.Reader
-//}
-//
-//func New() *Instrumentor {
-//	return &Instrumentor{}
-//}
-//
-//func (i *Instrumentor) LibraryName() string {
-//	return instrumentedPkg
-//}
-//
-//func (i *Instrumentor) Load(ctx *context.InstrumentorContext) error {
-//	spec, err := ctx.Injector.Inject(loadBpf, "go", ctx.TargetDetails.GoVersion.Original(), nil, nil, false)
-//	if err != nil {
-//		return err
-//	}
-//
-//	i.bpfObjects = &bpfObjects{}
-//	err = utils.LoadEBPFObjects(spec, i.bpfObjects, &ebpf.CollectionOptions{
-//		Maps: ebpf.MapOptions{
-//			PinPath: bpffs.PathForTargetApplication(ctx.TargetDetails),
-//		},
-//	})
-//	if err != nil {
-//		return err
-//	}
-//
-//	for _, funcName := range i.FuncNames() {
-//		i.registerProbes(ctx, funcName)
-//	}
-//	rd, err := perf.NewReader(i.bpfObjects.Events, os.Getpagesize())
-//	if err != nil {
-//		return err
-//	}
-//	i.eventsReader = rd
-//
-//	return nil
-//}
-//
-//func (g *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName string) {
-//	logger := log.Logger.WithName(instrumentedPkg).WithValues("function", funcName)
-//	offset, err := ctx.TargetDetails.GetFunctionOffset(funcName)
-//	if err != nil {
-//		logger.Error(err, "could not find function start offset. Skipping")
-//		return
-//	}
-//	retOffsets, err := ctx.TargetDetails.GetFunctionReturns(funcName)
-//	if err != nil {
-//		logger.Error(err, "could not find function end offset. Skipping")
-//		return
-//	}
-//
-//	up, err := ctx.Executable.Uprobe("", g.bpfObjects.UprobeGorillaMuxServeHTTP, &link.UprobeOptions{
-//		Address: offset,
-//	})
-//	if err != nil {
-//		logger.Error(err, "could not insert start uprobe. Skipping")
-//		return
-//	}
-//
-//	g.uprobes = append(g.uprobes, up)
-//
-//	for _, ret := range retOffsets {
-//		retProbe, err := ctx.Executable.Uprobe("", g.bpfObjects.UprobeGorillaMuxServeHTTP_Returns, &link.UprobeOptions{
-//			Address: ret,
-//		})
-//		if err != nil {
-//			logger.Error(err, "could not insert return uprobe. Skipping")
-//			return
-//		}
-//		g.returnProbs = append(g.returnProbs, retProbe)
-//	}
-//}
+
+const (
+	instrumentedPkg  = "sirupsen/logrus"
+	instrumentorName = "sirupsen/logrus-instrumentor"
+)
+
+type Event struct {
+	context.BaseSpanProperties
+	Level uint64
+	Log   [100]byte
+}
+
+type Instrumentor struct {
+	bpfObjects   *bpfObjects
+	uprobes      []link.Link
+	returnProbes []link.Link
+	eventsReader *perf.Reader
+}
+
+// New returns a new [Instrumentor].
+func New() *Instrumentor {
+	return &Instrumentor{}
+}
+
+func (i *Instrumentor) LibraryName() string {
+	return instrumentedPkg
+}
+
+func (i *Instrumentor) FuncNames() []string {
+	return []string{"github.com/sirupsen/logrus.(*Entry).write"}
+}
+
+func (i *Instrumentor) Load(ctx *context.InstrumentorContext) error {
+	spec, err := ctx.Injector.Inject(loadBpf, "go", ctx.TargetDetails.GoVersion.Original(), []*inject.StructField{
+		{
+			VarName:    "level_ptr_pos",
+			StructName: "logrus.Entry",
+			Field:      "Level",
+		},
+		{
+			VarName:    "message_ptr_pos",
+			StructName: "logrus.Entry",
+			Field:      "Message",
+		},
+	}, nil, false)
+
+	if err != nil {
+		return err
+	}
+
+	i.bpfObjects = &bpfObjects{}
+	err = utils.LoadEBPFObjects(spec, i.bpfObjects, &ebpf.CollectionOptions{
+		Maps: ebpf.MapOptions{
+			PinPath: bpffs.PathForTargetApplication(ctx.TargetDetails),
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, funcName := range i.FuncNames() {
+		i.registerProbes(ctx, funcName)
+	}
+	rd, err := perf.NewReader(i.bpfObjects.Events, os.Getpagesize())
+	if err != nil {
+		return err
+	}
+	i.eventsReader = rd
+
+	return nil
+}
+
+func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName string) {
+	logger := log.Logger.WithName(instrumentorName).
+		WithValues("function", funcName)
+	offset, err := ctx.TargetDetails.GetFunctionOffset(funcName)
+	if err != nil {
+		logger.Error(err, "could not find function start offset. Skipping")
+		return
+	}
+
+	up, err := ctx.Executable.Uprobe("", i.bpfObjects.UprobeLogrusEntryWrite, &link.UprobeOptions{
+		Address: offset,
+	})
+	if err != nil {
+		logger.Error(err, "could not insert start uprobe. Skipping")
+		return
+	}
+
+	i.uprobes = append(i.uprobes, up)
+}
+
+func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
+	logger := log.Logger.WithName(instrumentorName)
+	var event Event
+
+	for {
+		record, err := i.eventsReader.Read()
+		if err != nil {
+			if errors.Is(err, perf.ErrClosed) {
+				logger.Info("[DEBUG] - Perf channel closed.")
+				return
+			}
+			logger.Error(err, "error reading from perf reader")
+			// Add metric to count error from perf reader
+			continue
+		}
+
+		if record.LostSamples != 0 {
+			logger.V(0).Info("perf event rung buffer full", "dropped", record.LostSamples)
+			continue
+		}
+
+		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+			logger.Error(err, "error parsing perf event")
+			continue
+		}
+
+		eventsChan <- i.convertEvent(&event)
+	}
+}
+
+func convertLevel(level uint64) string {
+	logrusLevel := logrus_lib.Level(level)
+	return logrusLevel.String()
+}
+
+func (i *Instrumentor) convertEvent(e *Event) *events.Event {
+	Log := unix.ByteSliceToString(e.Log[:])
+	Level := convertLevel(e.Level)
+
+	sc := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    e.SpanContext.TraceID,
+		SpanID:     e.SpanContext.SpanID,
+		TraceFlags: trace.FlagsSampled,
+	})
+
+	msgKey := attribute.Key("message")
+	levelKey := attribute.Key("level")
+
+	return &events.Event{
+		Library:     i.LibraryName(),
+		Name:        Level,
+		Kind:        trace.SpanKindServer,
+		StartTime:   int64(e.StartTime),
+		EndTime:     int64(e.EndTime),
+		SpanContext: &sc,
+		Attributes: []attribute.KeyValue{
+			msgKey.String(Log),
+			levelKey.String(Level),
+		},
+	}
+}
+
+func (i *Instrumentor) Close() {
+	log.Logger.V(0).Info("closing sirupsen/logrus instrumentor")
+	if i.eventsReader != nil {
+		i.eventsReader.Close()
+	}
+
+	for _, r := range i.uprobes {
+		r.Close()
+	}
+
+	// no ret uprobe
+
+	if i.bpfObjects != nil {
+		i.bpfObjects.Close()
+	}
+}

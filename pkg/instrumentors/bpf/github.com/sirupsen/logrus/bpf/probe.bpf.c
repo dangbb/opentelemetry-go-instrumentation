@@ -76,6 +76,10 @@ const struct log_event_t *unused __attribute__((unused));
 //    return 0;
 //};
 
+// Injected in init
+volatile const u64 level_ptr_pos;
+volatile const u64 message_ptr_pos;
+
 // Define main function to extract information
 // Attach probe at function:
 // `func (entry *Entry) write() {...}`
@@ -91,26 +95,13 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
     // get level position
     void *entry_ptr = get_argument(ctx, entry_ptr_pos);
 
-    bpf_probe_read(&logEvent.level, sizeof(logEvent.level), (void *)(entry_ptr + 5 * 8));
-
-    u64 level = 0;
-    bpf_probe_read(&level, sizeof(level), (void *)(entry_ptr + 5 * 8));
-    bpf_printk("Show level 2 %llu\n", level);
-
-    bpf_probe_read(&level, sizeof(level), (void *)(entry_ptr + 4 * 8));
-    bpf_printk("Show level 2 %llu\n", level);
-
-    bpf_probe_read(&level, sizeof(level), (void *)(entry_ptr + 3 * 8));
-    bpf_printk("Show level 3 %llu\n", level);
-
-    bpf_probe_read(&level, sizeof(level), (void *)(entry_ptr + 2 * 8));
-    bpf_printk("Show level 2 %llu\n", level);
+    bpf_probe_read(&logEvent.level, sizeof(logEvent.level), (void *)(entry_ptr + level_ptr_pos * 8));
 
     u64 msg_len = 0;
-    bpf_probe_read(&msg_len, sizeof(msg_len), (void *)(entry_ptr + 8 * 8));
+    bpf_probe_read(&msg_len, sizeof(msg_len), (void *)(entry_ptr + (message_ptr_pos + 1) * 8));
     msg_len = msg_len > MAX_LOG_SIZE ? MAX_LOG_SIZE : msg_len;
     void *path_ptr = 0;
-    bpf_probe_read(&path_ptr, sizeof(path_ptr), (void *)(entry_ptr + 7 * 8));
+    bpf_probe_read(&path_ptr, sizeof(path_ptr), (void *)(entry_ptr + message_ptr_pos * 8));
     bpf_probe_read(&logEvent.log, msg_len, path_ptr);
 
     // add to perf map
