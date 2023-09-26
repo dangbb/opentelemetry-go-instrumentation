@@ -1,5 +1,9 @@
 ## Note 
 
+```shell
+GOOS=linux GOARCH=amd64 go tool compile -S -N -l main.go
+```
+
 - In new version of golang, the parameter is stored in register first, instead of stack.
 - Trong nhưng version mới nhất của golang (>=1.17), các tham số hàm được lưu trữ trong thanh ghi trước, thay cho stack như các version trước.
 - Đối với kiểu string.

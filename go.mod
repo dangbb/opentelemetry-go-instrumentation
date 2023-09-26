@@ -3,6 +3,7 @@ module go.opentelemetry.io/auto
 go 1.18
 
 require (
+	github.com/IBM/sarama v1.41.2
 	github.com/cilium/ebpf v0.11.0
 	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/zapr v1.2.4
@@ -23,7 +24,6 @@ require (
 )
 
 require (
-	github.com/IBM/sarama v1.41.2 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.4.0 // indirect

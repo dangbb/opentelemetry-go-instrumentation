@@ -56,7 +56,7 @@ func main() {
 		})
 
 	if err != nil {
-		log.Fatalf("error while fetching offsets for \"runtime\": %v\n", err)
+		log.Fatalf("error while fetching offsets for \"runtime\": %v\n", err.Error())
 	}
 
 	stdLibNetHTTPOffsets, err := target.New("net/http", *outputFile, true).
@@ -149,8 +149,44 @@ func main() {
 		log.Fatalf("error while fetching offsets: %v\n", err)
 	}
 
+	// Add 2 new file for offset tracker
+	logrusOffsets, err := target.New("github.com/sirupsen/logrus", *outputFile, false).
+		FindOffsets([]*binary.DataMember{
+			{
+				StructName: "github.com/sirupsen/logrus.Entry",
+				Field:      "Level",
+			},
+			{
+				StructName: "github.com/sirupsen/logrus.Entry",
+				Field:      "Message",
+			},
+		})
+
+	if err != nil {
+		log.Fatalf("error while fetching offsets: %v\n", err)
+	}
+
+	saramaOffsets, err := target.New("github.com/IBM/sarama", *outputFile, false).
+		FindOffsets([]*binary.DataMember{
+			{
+				StructName: "github.com/IBM/sarama.ProducerMessage",
+				Field:      "Topic",
+			},
+		})
+
+	if err != nil {
+		log.Fatalf("error while fetching offsets: %v\n", err)
+	}
+
 	fmt.Println("Done collecting offsets, writing results to file ...")
-	err = writer.WriteResults(*outputFile, stdLibRuntimeOffsets, stdLibNetHTTPOffsets, stdLibNetURLOffsets, grpcOffsets)
+	err = writer.WriteResults(*outputFile,
+		stdLibRuntimeOffsets,
+		stdLibNetHTTPOffsets,
+		stdLibNetURLOffsets,
+		grpcOffsets,
+		logrusOffsets,
+		saramaOffsets,
+	)
 	if err != nil {
 		log.Fatalf("error while writing results to file: %v\n", err)
 	}
