@@ -44,10 +44,14 @@ func sendKafka() {
 				Key:   []byte("header-key"),
 				Value: []byte("header-value"),
 			},
+			{
+				Key:   []byte("header-key-2"),
+				Value: []byte("header-value-2"),
+			},
 		},
 		Metadata:  nil,
-		Offset:    0,
-		Partition: 0,
+		Offset:    11,
+		Partition: 13,
 		Timestamp: time.Time{},
 	}
 
