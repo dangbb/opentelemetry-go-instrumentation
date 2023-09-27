@@ -257,6 +257,68 @@
           }
         ]
       }
+    },
+    "github.com/IBM/sarama.ProducerMessage": {
+      "Topic": {
+        "versions": {
+          "oldest": "0.0.0",
+          "newest": "1.41.2"
+        },
+        "offsets": [
+          {
+            "offset": 0,
+            "since": "0.0.0"
+          }
+        ]
+      },
+      "Key": {
+        "versions": {
+          "oldest": "0.0.0",
+          "newest": "1.41.2"
+        },
+        "offsets": [
+          {
+            "offset": 16,
+            "since": "0.0.0"
+          }
+        ]
+      },
+      "Value": {
+        "versions": {
+          "oldest": "0.0.0",
+          "newest": "1.41.2"
+        },
+        "offsets": [
+          {
+            "offset": 32,
+            "since": "0.0.0"
+          }
+        ]
+      },
+      "Offset": {
+        "versions": {
+          "oldest": "0.0.0",
+          "newest": "1.41.2"
+        },
+        "offsets": [
+          {
+            "offset": 104,
+            "since": "0.0.0"
+          }
+        ]
+      },
+      "Partition": {
+        "versions": {
+          "oldest": "0.0.0",
+          "newest": "1.41.2"
+        },
+        "offsets": [
+          {
+            "offset": 112,
+            "since": "0.0.0"
+          }
+        ]
+      }
     }
   }
 }

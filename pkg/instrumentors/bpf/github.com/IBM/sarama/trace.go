@@ -74,6 +74,26 @@ func (i *Instrumentor) Load(ctx *context.InstrumentorContext) error {
 			StructName: "sarama.ProducerMessage",
 			Field:      "Topic",
 		},
+		{
+			VarName:    "key_ptr_pos",
+			StructName: "sarama.ProducerMessage",
+			Field:      "Key",
+		},
+		{
+			VarName:    "value_ptr_pos",
+			StructName: "sarama.ProducerMessage",
+			Field:      "Value",
+		},
+		{
+			VarName:    "offset_ptr_pos",
+			StructName: "sarama.ProducerMessage",
+			Field:      "Offset",
+		},
+		{
+			VarName:    "partition_ptr_pos",
+			StructName: "sarama.ProducerMessage",
+			Field:      "Partition",
+		},
 	}, nil, false)
 
 	if err != nil {
