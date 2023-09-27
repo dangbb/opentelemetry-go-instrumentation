@@ -23,6 +23,8 @@ char __license[] SEC("license") = "Dual MIT/GPL";
 #define KEY_MAX_LEN 20
 #define VALUE_MAX_LEN 150
 #define MAX_CONCURRENT 50
+#define MAGIC_NUMBER 24
+#define MAX_HEADER_LEN 100
 
 struct publisher_message_t
 {
@@ -106,14 +108,39 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     bpf_trace_printk(req.value, sizeof(req.value));
 
     // extract offset
-    bpf_printk("Offset at : %d", offset_ptr_pos);
     bpf_probe_read(&req.offset, sizeof(req.offset), (void *)(msg_ptr + offset_ptr_pos));
     bpf_printk("Offset: %d", req.offset);
 
     // extract partition
-    bpf_printk("Partition at : %d", partition_ptr_pos);
     bpf_probe_read(&req.partition, sizeof(req.partition), (void *)(msg_ptr + partition_ptr_pos));
     bpf_printk("Partition: %d", req.partition);
+
+    // extract header length
+    u64 headers_arr_ptr_pos = 56;
+    u64 headers_len = 0;
+
+    bpf_probe_read(&headers_len, sizeof(headers_len), (void *)(msg_ptr + (headers_arr_ptr_pos + 8)));
+    bpf_printk("Header count: %d", headers_len);
+
+//    if (headers_len > 0) {
+//        void *header_arr_ptr = 0;
+//        bpf_probe_read(&header_arr_ptr, sizeof(header_arr_ptr), (void *)(msg_ptr + headers_arr_ptr_pos));
+//
+//        void *header_key_ptr = 0;
+//        u64 header_key_len = 0;
+//
+//        bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + MAGIC_NUMBER));
+//        bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + MAGIC_NUMBER + 8));
+//        bpf_printk("Header key len: %d", header_key_len);
+//        header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
+//
+//        bpf_probe_read(&req.header_key, header_key_len, header_key_ptr);
+//        bpf_trace_printk(req.header_key, sizeof(req.header_key));
+//
+////      void *header_value_ptr_ptr = 0;
+////      void *header_value_ptr = 0;
+////      u64 header_value_len = 0;
+//    }
 
     return 0;
 }
