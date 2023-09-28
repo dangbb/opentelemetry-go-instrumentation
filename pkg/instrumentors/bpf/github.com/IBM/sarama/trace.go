@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mux provides an instrumentation probe for the github.com/gorilla/mux
-// package.
+// //Ngo Hai Dang (Dangbb)'s thesis contribution:
+// //- Implement eBPF instrumentation for sarama library.
 
 package sarama
 
@@ -21,7 +21,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	logrus_lib "github.com/sirupsen/logrus"
+	"fmt"
+	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/sys/unix"
 	"os"
 
 	"github.com/cilium/ebpf"
@@ -45,6 +47,15 @@ const (
 
 type Event struct {
 	context.BaseSpanProperties
+	Topic   [30]byte
+	Key     [20]byte
+	Value   [100]byte
+	Header1 [25]byte
+	Value1  [25]byte
+	Header2 [25]byte
+	Value2  [25]byte
+	Header3 [25]byte
+	Value3  [25]byte
 }
 
 type Instrumentor struct {
@@ -85,14 +96,9 @@ func (i *Instrumentor) Load(ctx *context.InstrumentorContext) error {
 			Field:      "Value",
 		},
 		{
-			VarName:    "offset_ptr_pos",
+			VarName:    "headers_arr_ptr_pos",
 			StructName: "sarama.ProducerMessage",
-			Field:      "Offset",
-		},
-		{
-			VarName:    "partition_ptr_pos",
-			StructName: "sarama.ProducerMessage",
-			Field:      "Partition",
+			Field:      "Headers",
 		},
 	}, nil, false)
 
@@ -172,12 +178,20 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	}
 }
 
-func convertLevel(level uint64) string {
-	logrusLevel := logrus_lib.Level(level)
-	return logrusLevel.String()
-}
-
 func (i *Instrumentor) convertEvent(e *Event) *events.Event {
+	topic := unix.ByteSliceToString(e.Topic[:])
+	key := unix.ByteSliceToString(e.Key[:])
+	value := unix.ByteSliceToString(e.Value[:])
+
+	headerKey1 := unix.ByteSliceToString(e.Header1[:])
+	headerKey2 := unix.ByteSliceToString(e.Header2[:])
+	headerKey3 := unix.ByteSliceToString(e.Header3[:])
+	headerValue1 := unix.ByteSliceToString(e.Value1[:])
+	headerValue2 := unix.ByteSliceToString(e.Value2[:])
+	headerValue3 := unix.ByteSliceToString(e.Value3[:])
+
+	fmt.Printf("Value of span id %s", e.SpanContext.SpanID)
+
 	sc := trace.NewSpanContext(trace.SpanContextConfig{
 		TraceID:    e.SpanContext.TraceID,
 		SpanID:     e.SpanContext.SpanID,
@@ -185,11 +199,25 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	})
 
 	return &events.Event{
+		Name:        fmt.Sprintf("sarama topic: %s", topic),
 		Library:     i.LibraryName(),
 		Kind:        trace.SpanKindServer,
 		StartTime:   int64(e.StartTime),
 		EndTime:     int64(e.EndTime),
 		SpanContext: &sc,
+		Attributes: []attribute.KeyValue{
+			attribute.Key("key").String(key),
+			attribute.Key("value").String(value),
+			// Header 1
+			attribute.Key("header key 1").String(headerKey1),
+			attribute.Key("header value 1").String(headerValue1),
+			// Header 2
+			attribute.Key("header key 2").String(headerKey2),
+			attribute.Key("header value 2").String(headerValue2),
+			// Header 3
+			attribute.Key("header key 3").String(headerKey3),
+			attribute.Key("header value 3").String(headerValue3),
+		},
 	}
 }
 

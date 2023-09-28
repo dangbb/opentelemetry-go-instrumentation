@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 	"time"
@@ -64,6 +65,15 @@ func sendKafka() {
 	fmt.Printf("Value of partition %d , offset %d\n", partition, offset)
 }
 
+func logLogrus() {
+	logrus.SetLevel(logrus.DebugLevel)
+
+	logrus.Trace("Something very low level.")
+	logrus.Debug("Useful debugging information.")
+	logrus.Info("Something noteworthy happened!")
+	logrus.Warn("You should probably take a look at this.")
+}
+
 //go:noinline
 func computeE(iterations int64) float64 {
 	res := 2.0
@@ -76,6 +86,8 @@ func computeE(iterations int64) float64 {
 
 	// test library IBM/sarama
 	sendKafka()
+	// test library sirupsen/logrus
+	logLogrus()
 
 	return res
 }

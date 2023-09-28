@@ -13,6 +13,8 @@ sudo cat /sys/kernel/debug/tracing/trace_pipe
 Add GDB checkpoint 
 ```shell
 b github.com/IBM/sarama.(*syncProducer).SendMessage
+b github.com/sirupsen/logrus.(*Entry).write
+
 ```
 
 How Golang binary build and store array of type byte ?

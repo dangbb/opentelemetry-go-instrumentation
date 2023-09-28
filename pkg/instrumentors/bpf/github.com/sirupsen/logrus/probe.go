@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/cilium/ebpf"
@@ -184,7 +185,7 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 
 	return &events.Event{
 		Library:     i.LibraryName(),
-		Name:        Level,
+		Name:        fmt.Sprintf("Logrus level: %s", Level),
 		Kind:        trace.SpanKindServer,
 		StartTime:   int64(e.StartTime),
 		EndTime:     int64(e.EndTime),

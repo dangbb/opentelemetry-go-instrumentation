@@ -17,12 +17,15 @@ type bpfPublisherMessageT struct {
 	EndTime   uint64
 	Sc        bpfSpanContext
 	Psc       bpfSpanContext
-	Topic     [100]int8
+	Topic     [30]int8
 	Key       [20]int8
-	Value     [150]int8
-	_         [2]byte
-	Offset    uint64
-	Partition uint64
+	Value     [80]int8
+	Header1   [25]int8
+	Value1    [25]int8
+	Header2   [25]int8
+	Value2    [25]int8
+	Header3   [25]int8
+	Value3    [25]int8
 }
 
 type bpfSpanContext struct {

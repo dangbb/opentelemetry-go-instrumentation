@@ -318,6 +318,44 @@
             "since": "0.0.0"
           }
         ]
+      },
+      "Headers": {
+        "versions": {
+          "oldest": "0.0.0",
+          "newest": "1.41.2"
+        },
+        "offsets": [
+          {
+            "offset": 40,
+            "since": "0.0.0"
+          }
+        ]
+      }
+    },
+    "logrus.Entry": {
+      "Level": {
+        "versions": {
+          "oldest": "0.0.0",
+          "newest": "9.9.9"
+        },
+        "offsets": [
+          {
+            "offset": 40,
+            "since": "0.0.0"
+          }
+        ]
+      },
+      "Message": {
+        "versions": {
+          "oldest": "0.0.0",
+          "newest": "9.9.9"
+        },
+        "offsets": [
+          {
+            "offset": 56,
+            "since": "0.0.0"
+          }
+        ]
       }
     }
   }

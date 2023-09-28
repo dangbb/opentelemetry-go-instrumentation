@@ -95,14 +95,16 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
     // get level position
     void *entry_ptr = get_argument(ctx, entry_ptr_pos);
 
-    bpf_probe_read(&logEvent.level, sizeof(logEvent.level), (void *)(entry_ptr + level_ptr_pos * 8));
+    bpf_probe_read(&logEvent.level, sizeof(logEvent.level), (void *)(entry_ptr + level_ptr_pos));
 
     u64 msg_len = 0;
-    bpf_probe_read(&msg_len, sizeof(msg_len), (void *)(entry_ptr + (message_ptr_pos + 1) * 8));
+    bpf_probe_read(&msg_len, sizeof(msg_len), (void *)(entry_ptr + message_ptr_pos + 8));
     msg_len = msg_len > MAX_LOG_SIZE ? MAX_LOG_SIZE : msg_len;
     void *path_ptr = 0;
-    bpf_probe_read(&path_ptr, sizeof(path_ptr), (void *)(entry_ptr + message_ptr_pos * 8));
+    bpf_probe_read(&path_ptr, sizeof(path_ptr), (void *)(entry_ptr + message_ptr_pos));
     bpf_probe_read(&logEvent.log, msg_len, path_ptr);
+
+    logEvent.sc = generate_span_context();
 
     // add to perf map
     // BPF_F_CURRENT_CPU flaf option ?
