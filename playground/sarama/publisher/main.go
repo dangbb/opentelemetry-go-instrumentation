@@ -26,7 +26,7 @@ func newSyncPublisher() (sarama.SyncProducer, error) {
 
 	cfg.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategySticky()}
 
-	brokers := []string{"kafka:9092"}
+	brokers := []string{"localhost:9092"}
 
 	return sarama.NewSyncProducer(brokers, cfg)
 }

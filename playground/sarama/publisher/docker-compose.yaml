@@ -9,6 +9,7 @@ services:
   playground-sarama-pub:
     depends_on:
       - jaeger2
+      - kafka
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -65,7 +66,7 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:5.5.0
-    hostname: localhost
+    hostname: kafka
     container_name: kafka
     restart: unless-stopped
     ports:
