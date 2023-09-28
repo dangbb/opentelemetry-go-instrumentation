@@ -21,7 +21,7 @@ char __license[] SEC("license") = "Dual MIT/GPL";
 
 #define TOPIC_MAX_LEN 30
 #define KEY_MAX_LEN 20
-#define VALUE_MAX_LEN 80
+#define VALUE_MAX_LEN 100
 #define MAX_CONCURRENT 5
 #define MAGIC_NUMBER 24
 #define MAX_HEADER_LEN 25
@@ -186,8 +186,6 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
             bpf_trace_printk(req.value_3, sizeof(req.value_3));
         }
     }
-
-    // req.sc = generate_span_context();
 
     // send back to instrumentor
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &req, sizeof(req));

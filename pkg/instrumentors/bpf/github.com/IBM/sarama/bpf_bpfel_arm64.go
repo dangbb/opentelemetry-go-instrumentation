@@ -19,13 +19,14 @@ type bpfPublisherMessageT struct {
 	Psc       bpfSpanContext
 	Topic     [30]int8
 	Key       [20]int8
-	Value     [80]int8
+	Value     [100]int8
 	Header1   [25]int8
 	Value1    [25]int8
 	Header2   [25]int8
 	Value2    [25]int8
 	Header3   [25]int8
 	Value3    [25]int8
+	_         [4]byte
 }
 
 type bpfSpanContext struct {

@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/exp/rand"
 	"golang.org/x/sys/unix"
 	"os"
 
@@ -178,6 +179,32 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	}
 }
 
+func genRandomSpanId() trace.SpanID {
+	buff := trace.SpanID{}
+	for i := 0; i < 2; i++ {
+		random := rand.Int31()
+		buff[(4 * i)] = byte((random >> 24) & 0xFF)
+		buff[(4*i)+1] = byte((random >> 16) & 0xFF)
+		buff[(4*i)+2] = byte((random >> 8) & 0xFF)
+		buff[(4*i)+3] = byte(random & 0xFF)
+	}
+
+	return buff
+}
+
+func genRandomTraceId() trace.TraceID {
+	buff := trace.TraceID{}
+	for i := 0; i < 4; i++ {
+		random := rand.Int31()
+		buff[(4 * i)] = byte((random >> 24) & 0xFF)
+		buff[(4*i)+1] = byte((random >> 16) & 0xFF)
+		buff[(4*i)+2] = byte((random >> 8) & 0xFF)
+		buff[(4*i)+3] = byte(random & 0xFF)
+	}
+
+	return buff
+}
+
 func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	topic := unix.ByteSliceToString(e.Topic[:])
 	key := unix.ByteSliceToString(e.Key[:])
@@ -190,16 +217,25 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	headerValue2 := unix.ByteSliceToString(e.Value2[:])
 	headerValue3 := unix.ByteSliceToString(e.Value3[:])
 
-	fmt.Printf("Value of span id %s", e.SpanContext.SpanID)
+	// reduce load for inner eBPF
+	spanId := e.SpanContext.SpanID
+	if !e.SpanContext.SpanID.IsValid() {
+		spanId = genRandomSpanId()
+	}
+
+	traceId := e.SpanContext.TraceID
+	if !e.SpanContext.TraceID.IsValid() {
+		traceId = genRandomTraceId()
+	}
 
 	sc := trace.NewSpanContext(trace.SpanContextConfig{
-		TraceID:    e.SpanContext.TraceID,
-		SpanID:     e.SpanContext.SpanID,
+		TraceID:    traceId,
+		SpanID:     spanId,
 		TraceFlags: trace.FlagsSampled,
 	})
 
 	return &events.Event{
-		Name:        fmt.Sprintf("sarama topic: %s", topic),
+		Name:        fmt.Sprintf("Sarama topic: %s", topic),
 		Library:     i.LibraryName(),
 		Kind:        trace.SpanKindServer,
 		StartTime:   int64(e.StartTime),

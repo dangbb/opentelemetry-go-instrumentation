@@ -1,0 +1,86 @@
+version: "3.9"
+
+networks:
+  default:
+    name: http-db
+    driver: bridge
+
+services:
+  playground-sarama-pub:
+    depends_on:
+      - jaeger2
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    pid: "host"
+    ports:
+      - "9090:9090"
+    volumes:
+      - /proc:/host/proc
+  go-auto-new:
+    depends_on:
+      - playground-sarama-pub
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    privileged: true
+    pid: "host"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger2:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/main
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=httpPlusdb
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/host/proc
+
+  jaeger2:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=debug
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    restart: unless-stopped
+
+  zoo:
+    image: zookeeper:3.4.9
+    hostname: zoo
+    container_name: zoo
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_PORT: 2181
+      ZOO_SERVERS: server.1=zoo:2888:3888
+
+  kafka:
+    image: confluentinc/cp-kafka:5.5.0
+    hostname: localhost
+    container_name: kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+      - "9093"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9093, EXTERNAL://localhost:9092
+      KAFKA_LISTENERS: INTERNAL://:9093,EXTERNAL://:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: zoo:2181
+      KAFKA_BROKER_ID: 1
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    depends_on:
+      - zoo

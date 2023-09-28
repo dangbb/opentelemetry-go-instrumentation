@@ -184,7 +184,17 @@ For general performance analysis:
 
 List of tasks: https://app.diagrams.net/#G1SlL7WR4KKabT_eNkqCcU4cSg3jpgSI-5 
 
+### 28 Sep Note
 
+- Done code for sirupsen/logrus and IBM/sarama
+- Run example by command.
+
+```shell
+docker-compose -f docker-compose.yaml up -d 
+```
+
+- Trigger event by call: `curl localhost:9090/e`
+- Check log at: `http://localhost:16686/`
 
 ## License
 
