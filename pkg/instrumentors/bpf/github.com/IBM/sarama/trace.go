@@ -49,8 +49,8 @@ const (
 type Event struct {
 	context.BaseSpanProperties
 	Topic [30]byte
-	//Key     [20]byte
-	//Value   [100]byte
+	Key   [20]byte
+	Value [100]byte
 	//Header1 [25]byte
 	//Value1  [25]byte
 	//Header2 [25]byte
@@ -223,9 +223,9 @@ func genRandomTraceId() trace.TraceID {
 
 func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	topic := unix.ByteSliceToString(e.Topic[:])
-	//key := unix.ByteSliceToString(e.Key[:])
-	//value := unix.ByteSliceToString(e.Value[:])
-	//
+	key := unix.ByteSliceToString(e.Key[:])
+	value := unix.ByteSliceToString(e.Value[:])
+
 	//headerKey1 := unix.ByteSliceToString(e.Header1[:])
 	//headerKey2 := unix.ByteSliceToString(e.Header2[:])
 	//headerKey3 := unix.ByteSliceToString(e.Header3[:])
@@ -257,9 +257,9 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 		StartTime:   int64(e.StartTime),
 		EndTime:     int64(e.EndTime),
 		SpanContext: &sc,
-		Attributes:  []attribute.KeyValue{
-			//attribute.Key("key").String(key),
-			//attribute.Key("value").String(value),
+		Attributes: []attribute.KeyValue{
+			attribute.Key("key").String(key),
+			attribute.Key("value").String(value),
 			//// Header 1
 			//attribute.Key("header key 1").String(headerKey1),
 			//attribute.Key("header value 1").String(headerValue1),

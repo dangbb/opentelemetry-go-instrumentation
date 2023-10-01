@@ -30,8 +30,8 @@ struct publisher_message_t
 {
     BASE_SPAN_PROPERTIES
     char topic[TOPIC_MAX_LEN];
-//    char key[KEY_MAX_LEN];
-//    char value[VALUE_MAX_LEN];
+    char key[KEY_MAX_LEN];
+    char value[VALUE_MAX_LEN];
 
 //    char header_1[MAX_HEADER_LEN];
 //    char value_1[MAX_HEADER_LEN];
@@ -83,36 +83,36 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     void *topic_ptr = 0;
     bpf_probe_read(&topic_ptr, sizeof(topic_ptr), (void *)(msg_ptr + topic_ptr_pos));
     bpf_probe_read(&req.topic, topic_len, topic_ptr);
-//
-//    // extract key
-//    void *key_ptr_ptr = 0;
-//    bpf_probe_read(&key_ptr_ptr, sizeof(key_ptr_ptr), (void *)(msg_ptr + key_ptr_pos));
-//
-//    void *key_ptr = 0;
-//    bpf_probe_read(&key_ptr, sizeof(key_ptr), key_ptr_ptr);
-//
-//    u64 key_len = 0;
-//    bpf_probe_read(&key_len, sizeof(key_len), (void *)(key_ptr_ptr + 8));
-//    key_len = key_len > KEY_MAX_LEN ? KEY_MAX_LEN : key_len;
-//    bpf_probe_read(&req.key, key_len, key_ptr);
-//
-//    bpf_trace_printk(req.key, sizeof(req.key));
-//
-//
-//    // extract value
-//    void *value_ptr_ptr = 0;
-//    bpf_probe_read(&value_ptr_ptr, sizeof(value_ptr_ptr), (void *)(msg_ptr + value_ptr_pos));
-//
-//    void *value_ptr = 0;
-//    bpf_probe_read(&value_ptr, sizeof(value_ptr), value_ptr_ptr);
-//
-//    u64 value_len = 0;
-//    bpf_probe_read(&value_len, sizeof(value_len), (void *)(value_ptr_ptr + 8));
-//    value_len = value_len > VALUE_MAX_LEN ? VALUE_MAX_LEN : value_len;
-//    bpf_probe_read(&req.value, value_len, value_ptr);
-//
-//    bpf_trace_printk(req.value, sizeof(req.value));
-//
+
+    // extract key
+    void *key_ptr_ptr = 0;
+    bpf_probe_read(&key_ptr_ptr, sizeof(key_ptr_ptr), (void *)(msg_ptr + key_ptr_pos));
+
+    void *key_ptr = 0;
+    bpf_probe_read(&key_ptr, sizeof(key_ptr), key_ptr_ptr);
+
+    u64 key_len = 0;
+    bpf_probe_read(&key_len, sizeof(key_len), (void *)(key_ptr_ptr + 8));
+    key_len = key_len > KEY_MAX_LEN ? KEY_MAX_LEN : key_len;
+    bpf_probe_read(&req.key, key_len, key_ptr);
+
+    bpf_trace_printk(req.key, sizeof(req.key));
+
+
+    // extract value
+    void *value_ptr_ptr = 0;
+    bpf_probe_read(&value_ptr_ptr, sizeof(value_ptr_ptr), (void *)(msg_ptr + value_ptr_pos));
+
+    void *value_ptr = 0;
+    bpf_probe_read(&value_ptr, sizeof(value_ptr), value_ptr_ptr);
+
+    u64 value_len = 0;
+    bpf_probe_read(&value_len, sizeof(value_len), (void *)(value_ptr_ptr + 8));
+    value_len = value_len > VALUE_MAX_LEN ? VALUE_MAX_LEN : value_len;
+    bpf_probe_read(&req.value, value_len, value_ptr);
+
+    bpf_trace_printk(req.value, sizeof(req.value));
+
 //    // extract header length
 //    u64 headers_len = 0;
 //

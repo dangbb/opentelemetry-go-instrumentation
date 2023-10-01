@@ -18,6 +18,8 @@ type bpfPublisherMessageT struct {
 	Sc        bpfSpanContext
 	Psc       bpfSpanContext
 	Topic     [30]int8
+	Key       [20]int8
+	Value     [100]int8
 	_         [2]byte
 }
 
