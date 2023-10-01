@@ -86,7 +86,28 @@ int uprobe_GorillaMux_ServeHTTP(struct pt_regs *ctx) {
     httpReq.sc = generate_span_context();
     bpf_map_update_elem(&http_events, &key, &httpReq, 0);
     start_tracking_span(req_ctx_ptr, &httpReq.sc);
+
+//    static __always_inline void start_tracking_span(void *ctx, struct span_context *sc) {
+//        bpf_map_update_elem(&tracked_spans, &ctx, sc, BPF_ANY);
+//        bpf_map_update_elem(&tracked_spans_by_sc, sc, &ctx, BPF_ANY);
+//    }
+
     return 0;
 }
 
 UPROBE_RETURN(GorillaMux_ServeHTTP, struct http_request_t, 4, ctx_ptr_pos, http_events, events)
+
+//#define UPROBE_RETURN(name, event_type, ctx_struct_pos, ctx_struct_offset, uprobe_context_map, events_map) \
+//SEC("uprobe/##name##")                                                                                     \
+//int uprobe_##name##_Returns(struct pt_regs *ctx) {                                                         \
+//    void *req_ptr = get_argument(ctx, ctx_struct_pos);                                                     \
+//    void *key = get_consistent_key(ctx, (void *)(req_ptr + ctx_struct_offset));                            \
+//    void *req_ptr_map = bpf_map_lookup_elem(&uprobe_context_map, &key);                                    \
+//    event_type tmpReq = {};                                                                                \
+//    bpf_probe_read(&tmpReq, sizeof(tmpReq), req_ptr_map);                                                  \
+//    tmpReq.end_time = bpf_ktime_get_ns();                                                                  \
+//    bpf_perf_event_output(ctx, &events_map, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));                   \
+//    bpf_map_delete_elem(&uprobe_context_map, &key);                                                        \
+//    stop_tracking_span(&tmpReq.sc);                                                                        \
+//    return 0;                                                                                              \
+//}

@@ -31,15 +31,15 @@ func newSyncPublisher() (sarama.SyncProducer, error) {
 	return sarama.NewSyncProducer(brokers, cfg)
 }
 
-func sendKafka() {
+func sendKafka(id string) {
 	if err != nil {
 		panic(err)
 	}
 
 	msg := &sarama.ProducerMessage{
 		Topic: "123",
-		Key:   sarama.ByteEncoder("key"),
-		Value: sarama.ByteEncoder("value 2"),
+		Key:   sarama.ByteEncoder(fmt.Sprintf("key %s", id)),
+		Value: sarama.ByteEncoder(fmt.Sprintf("value 2 %s", id)),
 		Headers: []sarama.RecordHeader{
 			{
 				Key:   []byte("header-key"),
@@ -85,7 +85,9 @@ func computeE(iterations int64) float64 {
 	}
 
 	// test library IBM/sarama
-	sendKafka()
+	go sendKafka("1")
+	// check if 2 different function produce same consistent key
+	go sendKafka("2")
 	// test library sirupsen/logrus
 	logLogrus()
 

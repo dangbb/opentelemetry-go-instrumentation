@@ -48,15 +48,15 @@ const (
 
 type Event struct {
 	context.BaseSpanProperties
-	Topic   [30]byte
-	Key     [20]byte
-	Value   [100]byte
-	Header1 [25]byte
-	Value1  [25]byte
-	Header2 [25]byte
-	Value2  [25]byte
-	Header3 [25]byte
-	Value3  [25]byte
+	Topic [30]byte
+	//Key     [20]byte
+	//Value   [100]byte
+	//Header1 [25]byte
+	//Value1  [25]byte
+	//Header2 [25]byte
+	//Value2  [25]byte
+	//Header3 [25]byte
+	//Value3  [25]byte
 }
 
 type Instrumentor struct {
@@ -137,6 +137,11 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 		logger.Error(err, "could not find function start offset. Skipping")
 		return
 	}
+	retOffsets, err := ctx.TargetDetails.GetFunctionReturns(funcName)
+	if err != nil {
+		logger.Error(err, "could not find function end offset. Skipping")
+		return
+	}
 
 	up, err := ctx.Executable.Uprobe("", i.bpfObjects.UprobeSyncProducerSendMessage, &link.UprobeOptions{
 		Address: offset,
@@ -147,6 +152,17 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 	}
 
 	i.uprobes = append(i.uprobes, up)
+
+	for _, ret := range retOffsets {
+		retProbe, err := ctx.Executable.Uprobe("", i.bpfObjects.UprobeSyncProducerSendMessageReturns, &link.UprobeOptions{
+			Address: ret,
+		})
+		if err != nil {
+			logger.Error(err, "could not insert return uprobe. Skipping")
+			return
+		}
+		i.returnProbes = append(i.returnProbes, retProbe)
+	}
 }
 
 func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
@@ -207,15 +223,15 @@ func genRandomTraceId() trace.TraceID {
 
 func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	topic := unix.ByteSliceToString(e.Topic[:])
-	key := unix.ByteSliceToString(e.Key[:])
-	value := unix.ByteSliceToString(e.Value[:])
-
-	headerKey1 := unix.ByteSliceToString(e.Header1[:])
-	headerKey2 := unix.ByteSliceToString(e.Header2[:])
-	headerKey3 := unix.ByteSliceToString(e.Header3[:])
-	headerValue1 := unix.ByteSliceToString(e.Value1[:])
-	headerValue2 := unix.ByteSliceToString(e.Value2[:])
-	headerValue3 := unix.ByteSliceToString(e.Value3[:])
+	//key := unix.ByteSliceToString(e.Key[:])
+	//value := unix.ByteSliceToString(e.Value[:])
+	//
+	//headerKey1 := unix.ByteSliceToString(e.Header1[:])
+	//headerKey2 := unix.ByteSliceToString(e.Header2[:])
+	//headerKey3 := unix.ByteSliceToString(e.Header3[:])
+	//headerValue1 := unix.ByteSliceToString(e.Value1[:])
+	//headerValue2 := unix.ByteSliceToString(e.Value2[:])
+	//headerValue3 := unix.ByteSliceToString(e.Value3[:])
 
 	// reduce load for inner eBPF
 	spanId := e.SpanContext.SpanID
@@ -241,18 +257,18 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 		StartTime:   int64(e.StartTime),
 		EndTime:     int64(e.EndTime),
 		SpanContext: &sc,
-		Attributes: []attribute.KeyValue{
-			attribute.Key("key").String(key),
-			attribute.Key("value").String(value),
-			// Header 1
-			attribute.Key("header key 1").String(headerKey1),
-			attribute.Key("header value 1").String(headerValue1),
-			// Header 2
-			attribute.Key("header key 2").String(headerKey2),
-			attribute.Key("header value 2").String(headerValue2),
-			// Header 3
-			attribute.Key("header key 3").String(headerKey3),
-			attribute.Key("header value 3").String(headerValue3),
+		Attributes:  []attribute.KeyValue{
+			//attribute.Key("key").String(key),
+			//attribute.Key("value").String(value),
+			//// Header 1
+			//attribute.Key("header key 1").String(headerKey1),
+			//attribute.Key("header value 1").String(headerValue1),
+			//// Header 2
+			//attribute.Key("header key 2").String(headerKey2),
+			//attribute.Key("header value 2").String(headerValue2),
+			//// Header 3
+			//attribute.Key("header key 3").String(headerKey3),
+			//attribute.Key("header value 3").String(headerValue3),
 		},
 	}
 }
@@ -267,7 +283,9 @@ func (i *Instrumentor) Close() {
 		r.Close()
 	}
 
-	// no ret uprobe
+	for _, r := range i.returnProbes {
+		r.Close()
+	}
 
 	if i.bpfObjects != nil {
 		i.bpfObjects.Close()

@@ -18,15 +18,7 @@ type bpfPublisherMessageT struct {
 	Sc        bpfSpanContext
 	Psc       bpfSpanContext
 	Topic     [30]int8
-	Key       [20]int8
-	Value     [100]int8
-	Header1   [25]int8
-	Value1    [25]int8
-	Header2   [25]int8
-	Value2    [25]int8
-	Header3   [25]int8
-	Value3    [25]int8
-	_         [4]byte
+	_         [2]byte
 }
 
 type bpfSpanContext struct {
@@ -75,7 +67,8 @@ type bpfSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfProgramSpecs struct {
-	UprobeSyncProducerSendMessage *ebpf.ProgramSpec `ebpf:"uprobe_syncProducer_SendMessage"`
+	UprobeSyncProducerSendMessage        *ebpf.ProgramSpec `ebpf:"uprobe_syncProducer_SendMessage"`
+	UprobeSyncProducerSendMessageReturns *ebpf.ProgramSpec `ebpf:"uprobe_syncProducer_SendMessage_Returns"`
 }
 
 // bpfMapSpecs contains maps before they are loaded into the kernel.
@@ -126,12 +119,14 @@ func (m *bpfMaps) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfPrograms struct {
-	UprobeSyncProducerSendMessage *ebpf.Program `ebpf:"uprobe_syncProducer_SendMessage"`
+	UprobeSyncProducerSendMessage        *ebpf.Program `ebpf:"uprobe_syncProducer_SendMessage"`
+	UprobeSyncProducerSendMessageReturns *ebpf.Program `ebpf:"uprobe_syncProducer_SendMessage_Returns"`
 }
 
 func (p *bpfPrograms) Close() error {
 	return _BpfClose(
 		p.UprobeSyncProducerSendMessage,
+		p.UprobeSyncProducerSendMessageReturns,
 	)
 }
 

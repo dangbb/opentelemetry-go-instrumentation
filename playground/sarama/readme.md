@@ -53,3 +53,33 @@ Open bpf trace pipe
 ```shell
 sudo cat /sys/kernel/debug/tracing/trace_pipe
 ```
+
+Inspect function call goroutine (r14):
+1. 0xc0000076c0        824633751232
+2. 0xc0000076c0        824633751232 -> is identical
+
+Inspect function call goroutine (r14), in case function is really in goroutin:
+1. r14            0xc0001781a0        824635261344
+2. r14            0xc0001781a0        824635261344
+
+1. r14            0xc0001791e0        824635265504
+2. r14            0xc0001791e0        824635265504
+
+check what inside this address
+1. 0xc000179520 -> 0xc0001b1000 
+
+(gdb) x/a 0xc000179520
+0xc000179520:   0xc0001b1000
+(gdb) x/a 0xc0001b1000
+0xc0001b1000:   0xc000072000
+(gdb) x/a 0xc000072000
+0xc000072000:   0xc000073000
+(gdb) x/a 0xc000073000
+0xc000073000:   0xc00006e000
+(gdb) x/a 0xc00006e000
+0xc00006e000:   0x0
+
+-> Still identical -> maybe this only work with goroutine ?
+
+
+
