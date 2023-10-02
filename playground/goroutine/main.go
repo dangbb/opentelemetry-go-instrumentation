@@ -81,7 +81,7 @@ func SendKafka(ctx context.Context, id string) {
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 
-	cmax := 10
+	cmax := 999
 	count := 0
 
 	for {
