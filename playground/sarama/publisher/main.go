@@ -26,7 +26,7 @@ func newSyncPublisher() (sarama.SyncProducer, error) {
 
 	cfg.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategySticky()}
 
-	brokers := []string{"kafka:9092"}
+	brokers := []string{"localhost:9092"}
 
 	return sarama.NewSyncProducer(brokers, cfg)
 }
@@ -85,9 +85,9 @@ func computeE(iterations int64) float64 {
 	}
 
 	// test library IBM/sarama
-	go sendKafka("1")
+	sendKafka("1")
 	// check if 2 different function produce same consistent key
-	go sendKafka("2")
+	sendKafka("2")
 	// test library sirupsen/logrus
 	logLogrus()
 

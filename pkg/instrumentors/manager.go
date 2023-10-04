@@ -20,6 +20,7 @@ package instrumentors
 import (
 	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/IBM/sarama"
+	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/runtime"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/sirupsen/logrus"
 
 	"go.opentelemetry.io/auto/pkg/instrumentors/allocator"                                    // nolint:staticcheck  // Atomic deprecation.
@@ -125,6 +126,7 @@ func registerInstrumentors(m *Manager) error {
 		// New auto instrumentor for thesis
 		logrus.New(),
 		sarama.New(),
+		runtime.New(),
 	}
 
 	for _, i := range insts {

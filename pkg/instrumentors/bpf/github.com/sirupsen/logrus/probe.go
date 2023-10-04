@@ -53,6 +53,7 @@ type Event struct {
 	context.BaseSpanProperties
 	Level uint64
 	Log   [100]byte
+	Goid  uint64
 }
 
 type Instrumentor struct {
@@ -193,6 +194,7 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 		Attributes: []attribute.KeyValue{
 			msgKey.String(Log),
 			levelKey.String(Level),
+			attribute.Key("go-id").Int64(int64(e.Goid)),
 		},
 	}
 }

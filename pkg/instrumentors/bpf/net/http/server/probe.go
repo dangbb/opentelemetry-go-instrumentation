@@ -51,6 +51,7 @@ type Event struct {
 	context.BaseSpanProperties
 	Method [7]byte
 	Path   [100]byte
+	Goid   uint64
 }
 
 // Instrumentor is the net/http instrumentor.
@@ -238,6 +239,7 @@ func (h *Instrumentor) convertEvent(e *Event) *events.Event {
 		Attributes: []attribute.KeyValue{
 			semconv.HTTPMethodKey.String(method),
 			semconv.HTTPTargetKey.String(path),
+			attribute.Key("go-id").Int64(int64(e.Goid)),
 		},
 	}
 }

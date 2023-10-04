@@ -21,6 +21,7 @@ type bpfPublisherMessageT struct {
 	Key       [20]int8
 	Value     [100]int8
 	_         [2]byte
+	Goid      uint64
 }
 
 type bpfSpanContext struct {
@@ -78,6 +79,7 @@ type bpfProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
 	Events                 *ebpf.MapSpec `ebpf:"events"`
+	GoroutinesMap          *ebpf.MapSpec `ebpf:"goroutines_map"`
 	PublisherMessageEvents *ebpf.MapSpec `ebpf:"publisher_message_events"`
 	TrackedSpans           *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc       *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
@@ -103,6 +105,7 @@ func (o *bpfObjects) Close() error {
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
 	Events                 *ebpf.Map `ebpf:"events"`
+	GoroutinesMap          *ebpf.Map `ebpf:"goroutines_map"`
 	PublisherMessageEvents *ebpf.Map `ebpf:"publisher_message_events"`
 	TrackedSpans           *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc       *ebpf.Map `ebpf:"tracked_spans_by_sc"`
@@ -111,6 +114,7 @@ type bpfMaps struct {
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.Events,
+		m.GoroutinesMap,
 		m.PublisherMessageEvents,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,

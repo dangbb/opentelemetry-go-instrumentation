@@ -81,5 +81,6 @@ check what inside this address
 
 -> Still identical -> maybe this only work with goroutine ?
 
-Place probe for goroutine handling function.
-1. 
+
+For sarama, the sync process detach from main goroutine (not from the goroutine that handle the request). 
+So the process of integration from this package is hard.

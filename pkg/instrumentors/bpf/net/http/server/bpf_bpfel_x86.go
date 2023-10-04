@@ -20,6 +20,7 @@ type bpfHttpRequestT struct {
 	Method    [7]int8
 	Path      [100]int8
 	_         [5]byte
+	Goid      uint64
 }
 
 type bpfSpanContext struct {
@@ -79,6 +80,7 @@ type bpfMapSpecs struct {
 	AllocMap                    *ebpf.MapSpec `ebpf:"alloc_map"`
 	Events                      *ebpf.MapSpec `ebpf:"events"`
 	GolangMapbucketStorageMap   *ebpf.MapSpec `ebpf:"golang_mapbucket_storage_map"`
+	GoroutinesMap               *ebpf.MapSpec `ebpf:"goroutines_map"`
 	HttpEvents                  *ebpf.MapSpec `ebpf:"http_events"`
 	ParentSpanContextStorageMap *ebpf.MapSpec `ebpf:"parent_span_context_storage_map"`
 	TrackedSpans                *ebpf.MapSpec `ebpf:"tracked_spans"`
@@ -107,6 +109,7 @@ type bpfMaps struct {
 	AllocMap                    *ebpf.Map `ebpf:"alloc_map"`
 	Events                      *ebpf.Map `ebpf:"events"`
 	GolangMapbucketStorageMap   *ebpf.Map `ebpf:"golang_mapbucket_storage_map"`
+	GoroutinesMap               *ebpf.Map `ebpf:"goroutines_map"`
 	HttpEvents                  *ebpf.Map `ebpf:"http_events"`
 	ParentSpanContextStorageMap *ebpf.Map `ebpf:"parent_span_context_storage_map"`
 	TrackedSpans                *ebpf.Map `ebpf:"tracked_spans"`
@@ -118,6 +121,7 @@ func (m *bpfMaps) Close() error {
 		m.AllocMap,
 		m.Events,
 		m.GolangMapbucketStorageMap,
+		m.GoroutinesMap,
 		m.HttpEvents,
 		m.ParentSpanContextStorageMap,
 		m.TrackedSpans,

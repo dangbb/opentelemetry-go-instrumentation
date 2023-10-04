@@ -16,6 +16,7 @@
 #include "span_context.h"
 #include "go_context.h"
 #include "uprobe.h"
+#include "goroutines.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -32,6 +33,7 @@ struct publisher_message_t
     char topic[TOPIC_MAX_LEN];
     char key[KEY_MAX_LEN];
     char value[VALUE_MAX_LEN];
+    u64 goid;
 
 //    char header_1[MAX_HEADER_LEN];
 //    char value_1[MAX_HEADER_LEN];
@@ -96,9 +98,6 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     key_len = key_len > KEY_MAX_LEN ? KEY_MAX_LEN : key_len;
     bpf_probe_read(&req.key, key_len, key_ptr);
 
-    bpf_trace_printk(req.key, sizeof(req.key));
-
-
     // extract value
     void *value_ptr_ptr = 0;
     bpf_probe_read(&value_ptr_ptr, sizeof(value_ptr_ptr), (void *)(msg_ptr + value_ptr_pos));
@@ -110,8 +109,6 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     bpf_probe_read(&value_len, sizeof(value_len), (void *)(value_ptr_ptr + 8));
     value_len = value_len > VALUE_MAX_LEN ? VALUE_MAX_LEN : value_len;
     bpf_probe_read(&req.value, value_len, value_ptr);
-
-    bpf_trace_printk(req.value, sizeof(req.value));
 
 //    // extract header length
 //    u64 headers_len = 0;
@@ -188,7 +185,6 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     // extract key (address of msg)
     void *key = get_consistent_key(ctx, msg_ptr);
     u64 key64 = (u64)key;
-    bpf_printk("Key at: %d", key64);
 
     // write event
     req.sc = generate_span_context();
@@ -207,15 +203,14 @@ int uprobe_syncProducer_SendMessage_Returns(struct pt_regs *ctx) {
     void *req_ptr_map = bpf_map_lookup_elem(&publisher_message_events, &key);
 
     u64 key64 = (u64)key;
-    bpf_printk("Adverse kay at: %d", key64);
 
     struct publisher_message_t tmpReq = {};
     bpf_probe_read(&tmpReq, sizeof(tmpReq), req_ptr_map);
     tmpReq.end_time = bpf_ktime_get_ns();
 
-    bpf_printk("Start time: %d - %d", key64, tmpReq.start_time);
-    bpf_printk("End time: %d - %d", key64, tmpReq.end_time);
-    bpf_trace_printk(tmpReq.topic, sizeof(tmpReq.topic));
+    tmpReq.goid = get_current_goroutine();
+
+    bpf_printk("Sarama current goroutine: %d", get_current_goroutine());
 
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));
     bpf_map_delete_elem(&publisher_message_events, &key);

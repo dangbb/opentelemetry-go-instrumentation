@@ -17,6 +17,7 @@
 #include "go_context.h"
 #include "go_types.h"
 #include "uprobe.h"
+#include "goroutines.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -32,6 +33,7 @@ struct http_request_t
     BASE_SPAN_PROPERTIES
     char method[METHOD_MAX_LEN];
     char path[PATH_MAX_LEN];
+    u64 goid;
 };
 
 struct
@@ -217,6 +219,10 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
 
     // Write event
     httpReq.sc = generate_span_context();
+    httpReq.goid = get_current_goroutine();
+
+    bpf_printk("http/server current goroutine: %d", get_current_goroutine());
+
     bpf_map_update_elem(&http_events, &key, &httpReq, 0);
     start_tracking_span(req_ctx_ptr, &httpReq.sc);
     return 0;

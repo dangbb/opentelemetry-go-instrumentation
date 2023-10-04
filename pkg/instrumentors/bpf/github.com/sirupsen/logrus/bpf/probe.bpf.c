@@ -16,6 +16,7 @@
 #include "span_context.h"
 #include "go_context.h"
 #include "uprobe.h"
+#include "goroutines.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -27,6 +28,7 @@ struct log_event_t {
     BASE_SPAN_PROPERTIES
     u64 level;
     char log[MAX_LOG_SIZE];
+    u64 goid;
 };
 
 struct {
@@ -108,6 +110,10 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
 
     // add to perf map
     // BPF_F_CURRENT_CPU flaf option ?
+    logEvent.goid = get_current_goroutine();
+
+    bpf_printk("Logrus current goroutine: %d", get_current_goroutine());
+
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &logEvent, sizeof(logEvent));
     return 0;
 };

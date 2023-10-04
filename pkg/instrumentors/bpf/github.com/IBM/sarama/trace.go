@@ -51,6 +51,7 @@ type Event struct {
 	Topic [30]byte
 	Key   [20]byte
 	Value [100]byte
+	Goid  uint64
 	//Header1 [25]byte
 	//Value1  [25]byte
 	//Header2 [25]byte
@@ -260,6 +261,7 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 		Attributes: []attribute.KeyValue{
 			attribute.Key("key").String(key),
 			attribute.Key("value").String(value),
+			attribute.Key("go-id").Int64(int64(e.Goid)),
 			//// Header 1
 			//attribute.Key("header key 1").String(headerKey1),
 			//attribute.Key("header value 1").String(headerValue1),
