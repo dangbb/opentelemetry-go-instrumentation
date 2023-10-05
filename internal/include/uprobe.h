@@ -18,12 +18,14 @@
 #include "common.h"
 #include "span_context.h"
 #include "go_context.h"
+#include "goroutines.h"
 
 #define BASE_SPAN_PROPERTIES \
     u64 start_time;          \
     u64 end_time;            \
     struct span_context sc;  \
-    struct span_context psc; 
+    struct span_context psc; \
+    u64 trace_root;
 
 // Common flow for uprobe return:
 // 1. Find consistend key for the current uprobe context
@@ -32,6 +34,7 @@
 // 4. Submit the constructed event to the agent code using perf buffer events_map
 // 5. Delete the span from the uprobe_context_map
 // 6. Delete the span from the global active spans map
+// 7. Check if trace_root. Delete the corresponding sc
 #define UPROBE_RETURN(name, event_type, ctx_struct_pos, ctx_struct_offset, uprobe_context_map, events_map) \
 SEC("uprobe/##name##")                                                                                     \
 int uprobe_##name##_Returns(struct pt_regs *ctx) {                                                         \
@@ -44,6 +47,9 @@ int uprobe_##name##_Returns(struct pt_regs *ctx) {                              
     bpf_perf_event_output(ctx, &events_map, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));                   \
     bpf_map_delete_elem(&uprobe_context_map, &key);                                                        \
     stop_tracking_span(&tmpReq.sc);                                                                        \
+    if (tmpReq.trace_root > 0) {                                                                           \
+        delete_sc();                                                                                       \
+    }                                                                                                      \
     return 0;                                                                                              \
 }
 

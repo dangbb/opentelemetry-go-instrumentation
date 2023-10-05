@@ -17,6 +17,7 @@ type bpfLogEventT struct {
 	EndTime   uint64
 	Sc        bpfSpanContext
 	Psc       bpfSpanContext
+	TraceRoot uint64
 	Level     uint64
 	Log       [100]int8
 	_         [4]byte
@@ -69,7 +70,8 @@ type bpfSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfProgramSpecs struct {
-	UprobeLogrusEntryWrite *ebpf.ProgramSpec `ebpf:"uprobe_Logrus_EntryWrite"`
+	UprobeLogrusEntryWrite        *ebpf.ProgramSpec `ebpf:"uprobe_Logrus_EntryWrite"`
+	UprobeLogrusEntryWriteReturns *ebpf.ProgramSpec `ebpf:"uprobe_Logrus_EntryWrite_Returns"`
 }
 
 // bpfMapSpecs contains maps before they are loaded into the kernel.
@@ -79,6 +81,7 @@ type bpfMapSpecs struct {
 	Events           *ebpf.MapSpec `ebpf:"events"`
 	GoroutinesMap    *ebpf.MapSpec `ebpf:"goroutines_map"`
 	LogEvents        *ebpf.MapSpec `ebpf:"log_events"`
+	ScMap            *ebpf.MapSpec `ebpf:"sc_map"`
 	TrackedSpans     *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
 }
@@ -105,6 +108,7 @@ type bpfMaps struct {
 	Events           *ebpf.Map `ebpf:"events"`
 	GoroutinesMap    *ebpf.Map `ebpf:"goroutines_map"`
 	LogEvents        *ebpf.Map `ebpf:"log_events"`
+	ScMap            *ebpf.Map `ebpf:"sc_map"`
 	TrackedSpans     *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc *ebpf.Map `ebpf:"tracked_spans_by_sc"`
 }
@@ -114,6 +118,7 @@ func (m *bpfMaps) Close() error {
 		m.Events,
 		m.GoroutinesMap,
 		m.LogEvents,
+		m.ScMap,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,
 	)
@@ -123,12 +128,14 @@ func (m *bpfMaps) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfPrograms struct {
-	UprobeLogrusEntryWrite *ebpf.Program `ebpf:"uprobe_Logrus_EntryWrite"`
+	UprobeLogrusEntryWrite        *ebpf.Program `ebpf:"uprobe_Logrus_EntryWrite"`
+	UprobeLogrusEntryWriteReturns *ebpf.Program `ebpf:"uprobe_Logrus_EntryWrite_Returns"`
 }
 
 func (p *bpfPrograms) Close() error {
 	return _BpfClose(
 		p.UprobeLogrusEntryWrite,
+		p.UprobeLogrusEntryWriteReturns,
 	)
 }
 

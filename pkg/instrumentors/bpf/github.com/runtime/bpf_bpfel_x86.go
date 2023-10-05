@@ -12,6 +12,11 @@ import (
 	"github.com/cilium/ebpf"
 )
 
+type bpfSpanContext struct {
+	TraceID [16]uint8
+	SpanID  [8]uint8
+}
+
 // loadBpf returns the embedded CollectionSpec for bpf.
 func loadBpf() (*ebpf.CollectionSpec, error) {
 	reader := bytes.NewReader(_BpfBytes)
@@ -61,6 +66,7 @@ type bpfProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
 	GoroutinesMap *ebpf.MapSpec `ebpf:"goroutines_map"`
+	ScMap         *ebpf.MapSpec `ebpf:"sc_map"`
 }
 
 // bpfObjects contains all objects after they have been loaded into the kernel.
@@ -83,11 +89,13 @@ func (o *bpfObjects) Close() error {
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
 	GoroutinesMap *ebpf.Map `ebpf:"goroutines_map"`
+	ScMap         *ebpf.Map `ebpf:"sc_map"`
 }
 
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.GoroutinesMap,
+		m.ScMap,
 	)
 }
 

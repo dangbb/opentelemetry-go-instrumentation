@@ -17,6 +17,7 @@ type bpfPublisherMessageT struct {
 	EndTime   uint64
 	Sc        bpfSpanContext
 	Psc       bpfSpanContext
+	TraceRoot uint64
 	Topic     [30]int8
 	Key       [20]int8
 	Value     [100]int8
@@ -81,6 +82,7 @@ type bpfMapSpecs struct {
 	Events                 *ebpf.MapSpec `ebpf:"events"`
 	GoroutinesMap          *ebpf.MapSpec `ebpf:"goroutines_map"`
 	PublisherMessageEvents *ebpf.MapSpec `ebpf:"publisher_message_events"`
+	ScMap                  *ebpf.MapSpec `ebpf:"sc_map"`
 	TrackedSpans           *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc       *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
 }
@@ -107,6 +109,7 @@ type bpfMaps struct {
 	Events                 *ebpf.Map `ebpf:"events"`
 	GoroutinesMap          *ebpf.Map `ebpf:"goroutines_map"`
 	PublisherMessageEvents *ebpf.Map `ebpf:"publisher_message_events"`
+	ScMap                  *ebpf.Map `ebpf:"sc_map"`
 	TrackedSpans           *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc       *ebpf.Map `ebpf:"tracked_spans_by_sc"`
 }
@@ -116,6 +119,7 @@ func (m *bpfMaps) Close() error {
 		m.Events,
 		m.GoroutinesMap,
 		m.PublisherMessageEvents,
+		m.ScMap,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,
 	)

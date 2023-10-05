@@ -34,8 +34,8 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
     u64 current_thread = bpf_get_current_pid_tgid();
     bpf_map_update_elem(&goroutines_map, &current_thread, &goid, 0);
 
-    u64 curg = get_current_goroutine();
-    bpf_printk("Extracted value of goid: %d - on thread %d - curg %d", goid, current_thread, curg);
+//    u64 curg = get_current_goroutine();
+//    bpf_printk("Extracted value of goid: %d - on thread %d - curg %d", goid, current_thread, curg);
 
     return 0;
 }

@@ -22,6 +22,7 @@ type bpfSqlRequestT struct {
 	EndTime   uint64
 	Sc        bpfSpanContext
 	Psc       bpfSpanContext
+	TraceRoot uint64
 	Query     [100]int8
 	_         [4]byte
 }
@@ -77,6 +78,8 @@ type bpfProgramSpecs struct {
 type bpfMapSpecs struct {
 	AllocMap         *ebpf.MapSpec `ebpf:"alloc_map"`
 	Events           *ebpf.MapSpec `ebpf:"events"`
+	GoroutinesMap    *ebpf.MapSpec `ebpf:"goroutines_map"`
+	ScMap            *ebpf.MapSpec `ebpf:"sc_map"`
 	SqlEvents        *ebpf.MapSpec `ebpf:"sql_events"`
 	TrackedSpans     *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
@@ -103,6 +106,8 @@ func (o *bpfObjects) Close() error {
 type bpfMaps struct {
 	AllocMap         *ebpf.Map `ebpf:"alloc_map"`
 	Events           *ebpf.Map `ebpf:"events"`
+	GoroutinesMap    *ebpf.Map `ebpf:"goroutines_map"`
+	ScMap            *ebpf.Map `ebpf:"sc_map"`
 	SqlEvents        *ebpf.Map `ebpf:"sql_events"`
 	TrackedSpans     *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc *ebpf.Map `ebpf:"tracked_spans_by_sc"`
@@ -112,6 +117,8 @@ func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.AllocMap,
 		m.Events,
+		m.GoroutinesMap,
+		m.ScMap,
 		m.SqlEvents,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,

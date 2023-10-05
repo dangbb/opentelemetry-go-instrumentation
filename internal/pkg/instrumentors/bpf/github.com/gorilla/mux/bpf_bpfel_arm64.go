@@ -17,6 +17,7 @@ type bpfHttpRequestT struct {
 	EndTime   uint64
 	Sc        bpfSpanContext
 	Psc       bpfSpanContext
+	TraceRoot uint64
 	Method    [7]int8
 	Path      [100]int8
 	_         [5]byte
@@ -77,7 +78,9 @@ type bpfProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
 	Events           *ebpf.MapSpec `ebpf:"events"`
+	GoroutinesMap    *ebpf.MapSpec `ebpf:"goroutines_map"`
 	HttpEvents       *ebpf.MapSpec `ebpf:"http_events"`
+	ScMap            *ebpf.MapSpec `ebpf:"sc_map"`
 	TrackedSpans     *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
 }
@@ -102,7 +105,9 @@ func (o *bpfObjects) Close() error {
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
 	Events           *ebpf.Map `ebpf:"events"`
+	GoroutinesMap    *ebpf.Map `ebpf:"goroutines_map"`
 	HttpEvents       *ebpf.Map `ebpf:"http_events"`
+	ScMap            *ebpf.Map `ebpf:"sc_map"`
 	TrackedSpans     *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc *ebpf.Map `ebpf:"tracked_spans_by_sc"`
 }
@@ -110,7 +115,9 @@ type bpfMaps struct {
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.Events,
+		m.GoroutinesMap,
 		m.HttpEvents,
+		m.ScMap,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,
 	)

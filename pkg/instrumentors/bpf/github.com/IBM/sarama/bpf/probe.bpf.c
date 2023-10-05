@@ -16,7 +16,6 @@
 #include "span_context.h"
 #include "go_context.h"
 #include "uprobe.h"
-#include "goroutines.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -186,8 +185,38 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     void *key = get_consistent_key(ctx, msg_ptr);
     u64 key64 = (u64)key;
 
-    // write event
-    req.sc = generate_span_context();
+    void *sc_ptr = get_sc();
+
+    if (sc_ptr != NULL) {
+        // generate spanID, copy traceID
+        void *psc_ptr = get_sc();
+        bpf_probe_read(&req.psc, sizeof(req.psc), psc_ptr);
+
+        copy_byte_arrays(req.psc.TraceID, req.sc.TraceID, TRACE_ID_SIZE);
+        generate_random_bytes(req.sc.SpanID, SPAN_ID_SIZE);
+
+        bpf_printk("Sarama create new sc from exist psc");
+    } else {
+        // generate new sc
+        req.sc = generate_span_context();
+
+        req.trace_root = 1;
+        // Set kv for sc span
+        u64 go_id = get_current_goroutine();
+
+        // Only create new
+        u32 status = bpf_map_update_elem(&sc_map, &go_id, &req.sc, 0);
+
+        if (status == 0) {
+            bpf_printk("sarama - create correlation success go_id %d", go_id);
+
+            void *new_sc_ptr = get_sc();
+            bpf_printk("sarama - After create, test exist goid %d - result %d", go_id, (new_sc_ptr == NULL) ? 0 : 1);
+        } else {
+            bpf_printk("sarama - create correlation fail go_id %d", go_id);
+        }
+    }
+
     bpf_map_update_elem(&publisher_message_events, &key, &req, 0);
     start_tracking_span(msg_ptr, &req.sc);
 
@@ -215,5 +244,10 @@ int uprobe_syncProducer_SendMessage_Returns(struct pt_regs *ctx) {
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));
     bpf_map_delete_elem(&publisher_message_events, &key);
     stop_tracking_span(&tmpReq.sc);
+
+    if (tmpReq.trace_root > 0) {
+        delete_sc();
+    }
+
     return 0;
 }

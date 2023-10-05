@@ -22,6 +22,7 @@ type BaseSpanProperties struct {
 	EndTime           uint64
 	SpanContext       EBPFSpanContext
 	ParentSpanContext EBPFSpanContext
+	TraceRoot         uint64
 }
 
 // EBPFSpanContext is the the span context representation within the eBPF

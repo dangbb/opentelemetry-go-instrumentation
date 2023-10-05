@@ -125,6 +125,12 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 		return
 	}
 
+	retOffsets, err := ctx.TargetDetails.GetFunctionReturns(funcName)
+	if err != nil {
+		logger.Error(err, "could not find function end offset. Skipping")
+		return
+	}
+
 	up, err := ctx.Executable.Uprobe("", i.bpfObjects.UprobeLogrusEntryWrite, &link.UprobeOptions{
 		Address: offset,
 	})
@@ -134,6 +140,17 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 	}
 
 	i.uprobes = append(i.uprobes, up)
+
+	for _, ret := range retOffsets {
+		retProbe, err := ctx.Executable.Uprobe("", i.bpfObjects.UprobeLogrusEntryWriteReturns, &link.UprobeOptions{
+			Address: ret,
+		})
+		if err != nil {
+			logger.Error(err, "could not insert return uprobe. Skipping")
+			return
+		}
+		i.returnProbes = append(i.returnProbes, retProbe)
+	}
 }
 
 func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
@@ -181,6 +198,14 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 		TraceFlags: trace.FlagsSampled,
 	})
 
+	log.Logger.V(0).Info(fmt.Sprintf("logrus: Value of default parent span, trace ID %s - span ID %s",
+		e.ParentSpanContext.TraceID,
+		e.ParentSpanContext.SpanID))
+
+	log.Logger.V(0).Info(fmt.Sprintf("logrus: Value of default span, trace ID %s - span ID %s",
+		e.SpanContext.TraceID,
+		e.SpanContext.SpanID))
+
 	msgKey := attribute.Key("message")
 	levelKey := attribute.Key("level")
 
@@ -209,7 +234,9 @@ func (i *Instrumentor) Close() {
 		r.Close()
 	}
 
-	// no ret uprobe
+	for _, r := range i.returnProbes {
+		r.Close()
+	}
 
 	if i.bpfObjects != nil {
 		i.bpfObjects.Close()

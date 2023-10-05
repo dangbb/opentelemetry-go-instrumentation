@@ -17,7 +17,6 @@
 #include "go_context.h"
 #include "go_types.h"
 #include "uprobe.h"
-#include "goroutines.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -201,6 +200,8 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
 
     // Propagate context
     struct span_context *parent_ctx = extract_context_from_req_headers(req_ptr + headers_ptr_pos);
+    void *sc_ptr = get_sc();
+
     if (parent_ctx != NULL)
     {
         httpReq.psc = *parent_ctx;
@@ -209,7 +210,32 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
     }
     else
     {
-        httpReq.sc = generate_span_context();
+        if (sc_ptr != NULL) {
+            // sc_ptr exist, read value of sc_ptr
+            bpf_probe_read(&httpReq.sc, sizeof(httpReq.sc), sc_ptr);
+        } else {
+            // sc_ptr not exist, generate new value of src ptr
+            httpReq.sc = generate_span_context();
+        }
+    }
+
+    // context of not exists
+    if (sc_ptr == NULL) {
+        httpReq.trace_root = 1;
+        // Set kv for sc span
+        u64 go_id = get_current_goroutine();
+
+        // Only create new
+        u32 status = bpf_map_update_elem(&sc_map, &go_id, &httpReq.sc, 0);
+
+        if (status == 0) {
+            bpf_printk("net/http.Server - create correlation success go_id %d", go_id);
+
+            void *new_sc_ptr = get_sc();
+            bpf_printk("net/http.Server - After create, test exist goid %d - result %d", go_id, (new_sc_ptr == NULL) ? 0 : 1);
+        } else {
+            bpf_printk("net/http.Server - create correlation fail go_id %d", go_id);
+        }
     }
 
     // Get key
@@ -218,10 +244,9 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
     void *key = get_consistent_key(ctx, (void *)(req_ptr + ctx_ptr_pos));
 
     // Write event
-    httpReq.sc = generate_span_context();
     httpReq.goid = get_current_goroutine();
 
-    bpf_printk("http/server current goroutine: %d", get_current_goroutine());
+    bpf_printk("http/server current goroutine: %d", httpReq.goid);
 
     bpf_map_update_elem(&http_events, &key, &httpReq, 0);
     start_tracking_span(req_ctx_ptr, &httpReq.sc);

@@ -17,6 +17,7 @@
 #include "go_context.h"
 #include "go_types.h"
 #include "uprobe.h"
+#include "goroutines.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 

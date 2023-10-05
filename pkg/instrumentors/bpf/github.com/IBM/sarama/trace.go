@@ -234,6 +234,14 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	//headerValue2 := unix.ByteSliceToString(e.Value2[:])
 	//headerValue3 := unix.ByteSliceToString(e.Value3[:])
 
+	log.Logger.V(0).Info(fmt.Sprintf("Sarama: Value of default parent span, trace ID %s - span ID %s",
+		e.ParentSpanContext.TraceID,
+		e.ParentSpanContext.SpanID))
+
+	log.Logger.V(0).Info(fmt.Sprintf("Sarama: Value of default span, trace ID %s - span ID %s",
+		e.SpanContext.TraceID,
+		e.SpanContext.SpanID))
+
 	// reduce load for inner eBPF
 	spanId := e.SpanContext.SpanID
 	if !e.SpanContext.SpanID.IsValid() {

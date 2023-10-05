@@ -17,6 +17,7 @@ type bpfGrpcRequestT struct {
 	EndTime   uint64
 	Sc        bpfSpanContext
 	Psc       bpfSpanContext
+	TraceRoot uint64
 	Method    [100]int8
 	_         [4]byte
 }
@@ -78,7 +79,9 @@ type bpfProgramSpecs struct {
 type bpfMapSpecs struct {
 	AllocMap             *ebpf.MapSpec `ebpf:"alloc_map"`
 	Events               *ebpf.MapSpec `ebpf:"events"`
+	GoroutinesMap        *ebpf.MapSpec `ebpf:"goroutines_map"`
 	GrpcEvents           *ebpf.MapSpec `ebpf:"grpc_events"`
+	ScMap                *ebpf.MapSpec `ebpf:"sc_map"`
 	StreamidToGrpcEvents *ebpf.MapSpec `ebpf:"streamid_to_grpc_events"`
 	TrackedSpans         *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc     *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
@@ -105,7 +108,9 @@ func (o *bpfObjects) Close() error {
 type bpfMaps struct {
 	AllocMap             *ebpf.Map `ebpf:"alloc_map"`
 	Events               *ebpf.Map `ebpf:"events"`
+	GoroutinesMap        *ebpf.Map `ebpf:"goroutines_map"`
 	GrpcEvents           *ebpf.Map `ebpf:"grpc_events"`
+	ScMap                *ebpf.Map `ebpf:"sc_map"`
 	StreamidToGrpcEvents *ebpf.Map `ebpf:"streamid_to_grpc_events"`
 	TrackedSpans         *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc     *ebpf.Map `ebpf:"tracked_spans_by_sc"`
@@ -115,7 +120,9 @@ func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.AllocMap,
 		m.Events,
+		m.GoroutinesMap,
 		m.GrpcEvents,
+		m.ScMap,
 		m.StreamidToGrpcEvents,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,

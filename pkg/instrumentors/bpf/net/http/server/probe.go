@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"os"
 
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpffs" // nolint:staticcheck  // Atomic deprecation.
@@ -206,6 +207,14 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 func (h *Instrumentor) convertEvent(e *Event) *events.Event {
 	method := unix.ByteSliceToString(e.Method[:])
 	path := unix.ByteSliceToString(e.Path[:])
+
+	log.Logger.V(0).Info(fmt.Sprintf("net/http.Server: Value of default parent span, trace ID %s - span ID %s",
+		e.ParentSpanContext.TraceID,
+		e.ParentSpanContext.SpanID))
+
+	log.Logger.V(0).Info(fmt.Sprintf("net/http.Server: Value of default span, trace ID %s - span ID %s",
+		e.SpanContext.TraceID,
+		e.SpanContext.SpanID))
 
 	sc := trace.NewSpanContext(trace.SpanContextConfig{
 		TraceID:    e.SpanContext.TraceID,
