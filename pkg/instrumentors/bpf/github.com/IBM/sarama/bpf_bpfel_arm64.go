@@ -20,9 +20,14 @@ type bpfPublisherMessageT struct {
 	TraceRoot uint64
 	Topic     [30]int8
 	Key       [20]int8
-	Value     [100]int8
-	_         [2]byte
+	Value     [50]int8
+	_         [4]byte
 	Goid      uint64
+	Header1   [25]int8
+	Value1    [25]int8
+	Header2   [25]int8
+	Value2    [25]int8
+	_         [4]byte
 }
 
 type bpfSpanContext struct {

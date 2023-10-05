@@ -111,11 +111,8 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
         // generate spanID, copy traceID
         void *psc_ptr = get_sc();
         bpf_probe_read(&logEvent.psc, sizeof(logEvent.psc), psc_ptr);
-
         copy_byte_arrays(logEvent.psc.TraceID, logEvent.sc.TraceID, TRACE_ID_SIZE);
         generate_random_bytes(logEvent.sc.SpanID, SPAN_ID_SIZE);
-
-        bpf_printk("Logrus create new sc from exist psc");
     } else {
         // generate new sc
         logEvent.sc = generate_span_context();
@@ -141,10 +138,6 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
     // BPF_F_CURRENT_CPU flaf option ?
     logEvent.goid = get_current_goroutine();
 
-    bpf_printk("Logrus current goroutine: %d", get_current_goroutine());
-
-    bpf_printk("Logrus value of level: %d", logEvent.level);
-
     void *key = get_consistent_key(ctx, entry_ptr);
     bpf_map_update_elem(&log_events, &key, &logEvent, 0);
     start_tracking_span(entry_ptr, &logEvent.sc);
@@ -164,11 +157,6 @@ int uprobe_Logrus_EntryWrite_Returns(struct pt_regs *ctx) {
     tmpReq.end_time = bpf_ktime_get_ns();
 
     tmpReq.goid = get_current_goroutine();
-
-    bpf_printk("Logrus current goroutine: %d", get_current_goroutine());
-
-    bpf_printk("Logrus value of level, after : %d", tmpReq.level);
-    bpf_printk("Logrus value of goid, after : %d", tmpReq.goid);
 
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));
     bpf_map_delete_elem(&log_events, &key);

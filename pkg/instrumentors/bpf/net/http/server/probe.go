@@ -52,6 +52,7 @@ type Event struct {
 	context.BaseSpanProperties
 	Method [7]byte
 	Path   [100]byte
+	_      [5]byte
 	Goid   uint64
 }
 

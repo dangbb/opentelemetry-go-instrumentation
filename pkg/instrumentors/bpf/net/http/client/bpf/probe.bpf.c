@@ -146,6 +146,8 @@ int uprobe_HttpClient_Do(struct pt_regs *ctx) {
     void *req_ptr = get_argument(ctx, request_pos);
 
     // Get parent if exists
+    void *sc_ptr = get_sc(); // Search for active sc in current goroutine
+
     void *context_ptr = (void *)(req_ptr+ctx_ptr_pos);
     void *context_ptr_val = 0;
     bpf_probe_read(&context_ptr_val, sizeof(context_ptr_val), context_ptr);
@@ -155,7 +157,32 @@ int uprobe_HttpClient_Do(struct pt_regs *ctx) {
         copy_byte_arrays(httpReq.psc.TraceID, httpReq.sc.TraceID, TRACE_ID_SIZE);
         generate_random_bytes(httpReq.sc.SpanID, SPAN_ID_SIZE);
     } else {
-        httpReq.sc = generate_span_context();
+        if (sc_ptr != NULL) { // sc exists in current goroutine
+            bpf_probe_read(&httpReq.psc, sizeof(httpReq.psc), sc_ptr);
+            copy_byte_arrays(httpReq.psc.TraceID, httpReq.sc.TraceID, TRACE_ID_SIZE);
+            generate_random_bytes(httpReq.sc.SpanID, SPAN_ID_SIZE);
+        } else { // sc not exist. Create and set current as new gorotine
+            httpReq.sc = generate_span_context();
+        }
+    }
+
+    // context of not exists
+    if (sc_ptr == NULL) {
+        httpReq.trace_root = 1;
+        // Set kv for sc span
+        u64 go_id = get_current_goroutine();
+
+        // Only create new
+        u32 status = bpf_map_update_elem(&sc_map, &go_id, &httpReq.sc, 0);
+
+        if (status == 0) {
+            bpf_printk("net/http.Client - create correlation success go_id %d", go_id);
+
+            void *new_sc_ptr = get_sc();
+            bpf_printk("net/http.Client - After create, test exist goid %d - result %d", go_id, (new_sc_ptr == NULL) ? 0 : 1);
+        } else {
+            bpf_printk("net/http.Client - create correlation fail go_id %d", go_id);
+        }
     }
 
     void *method_ptr = 0;

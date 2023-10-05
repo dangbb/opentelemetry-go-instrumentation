@@ -48,14 +48,16 @@ const (
 
 type Event struct {
 	context.BaseSpanProperties
-	Topic [30]byte
-	Key   [20]byte
-	Value [100]byte
-	Goid  uint64
-	//Header1 [25]byte
-	//Value1  [25]byte
-	//Header2 [25]byte
-	//Value2  [25]byte
+	Topic   [30]byte
+	Key     [20]byte
+	Value   [50]byte
+	_       [4]byte
+	Goid    uint64
+	Header1 [25]byte
+	Value1  [25]byte
+	Header2 [25]byte
+	Value2  [25]byte
+	_       [4]byte
 	//Header3 [25]byte
 	//Value3  [25]byte
 }

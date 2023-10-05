@@ -53,6 +53,7 @@ type Event struct {
 	context.BaseSpanProperties
 	Level uint64
 	Log   [100]byte
+	_     [4]byte
 	Goid  uint64
 }
 

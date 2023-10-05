@@ -21,7 +21,7 @@ char __license[] SEC("license") = "Dual MIT/GPL";
 
 #define TOPIC_MAX_LEN 30
 #define KEY_MAX_LEN 20
-#define VALUE_MAX_LEN 100
+#define VALUE_MAX_LEN 50
 #define MAX_CONCURRENT 5
 #define MAGIC_NUMBER 24
 #define MAX_HEADER_LEN 25
@@ -34,13 +34,13 @@ struct publisher_message_t
     char value[VALUE_MAX_LEN];
     u64 goid;
 
-//    char header_1[MAX_HEADER_LEN];
-//    char value_1[MAX_HEADER_LEN];
+    char header_1[MAX_HEADER_LEN];
+    char value_1[MAX_HEADER_LEN];
 
-//    char header_2[MAX_HEADER_LEN];
-//    char value_2[MAX_HEADER_LEN];
+    char header_2[MAX_HEADER_LEN];
+    char value_2[MAX_HEADER_LEN];
 
-//    char header_3[MAX_HEADER_LEN]; -- reduce size to use span context and tracked span;
+//    char header_3[MAX_HEADER_LEN];
 //    char value_3[MAX_HEADER_LEN];
 };
 
@@ -109,77 +109,64 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     value_len = value_len > VALUE_MAX_LEN ? VALUE_MAX_LEN : value_len;
     bpf_probe_read(&req.value, value_len, value_ptr);
 
-//    // extract header length
-//    u64 headers_len = 0;
-//
-//    bpf_probe_read(&headers_len, sizeof(headers_len), (void *)(msg_ptr + (headers_arr_ptr_pos + 8)));
-//    bpf_printk("Header count: %d", headers_len);
-//
-//    if (headers_len > 0) {
-//        void *header_arr_ptr = 0;
-//        bpf_probe_read(&header_arr_ptr, sizeof(header_arr_ptr), (void *)(msg_ptr + headers_arr_ptr_pos));
-//
-//        void *header_key_ptr = 0;
-//        u64 header_key_len = 0;
+    // extract header length
+    u64 headers_len = 0;
 
-//        // 1st header key
-//        bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (0 * 24)));
-//        bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (0 * 24 + 8)));
-//        bpf_printk("Header key len: %d", header_key_len);
-//        header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
-//
-//        bpf_probe_read(&req.header_1, header_key_len, header_key_ptr);
-//        bpf_trace_printk(req.header_1, sizeof(req.header_1));
-//
-//        // 1st header value
-//        bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (1 * 24)));
-//        bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (1 * 24 + 8)));
-//        bpf_printk("Header key len: %d", header_key_len);
-//        header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
-//
-//        bpf_probe_read(&req.value_1, header_key_len, header_key_ptr);
-//        bpf_trace_printk(req.value_1, sizeof(req.value_1));
-//
-//        if (headers_len > 1) {
-//            // 2nd header key
-//            bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (2 * 24)));
-//            bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (2 * 24 + 8)));
-//            bpf_printk("Header key len: %d", header_key_len);
-//            header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
-//
-//            bpf_probe_read(&req.header_2, header_key_len, header_key_ptr);
-//            bpf_trace_printk(req.header_2, sizeof(req.header_2));
-//
-//            // 2nd header value
-//            bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (3 * 24)));
-//            bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (3 * 24 + 8)));
-//            bpf_printk("Header key len: %d", header_key_len);
-//            header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
-//
-//            bpf_probe_read(&req.value_2, header_key_len, header_key_ptr);
-//            bpf_trace_printk(req.value_2, sizeof(req.value_2));
-//        }
-//
+    bpf_probe_read(&headers_len, sizeof(headers_len), (void *)(msg_ptr + (headers_arr_ptr_pos + 8)));
+
+    if (headers_len > 0) {
+        void *header_arr_ptr = 0;
+        bpf_probe_read(&header_arr_ptr, sizeof(header_arr_ptr), (void *)(msg_ptr + headers_arr_ptr_pos));
+
+        void *header_key_ptr = 0;
+        u64 header_key_len = 0;
+
+        // 1st header key
+        bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (0 * 24)));
+        bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (0 * 24 + 8)));
+        header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
+
+        bpf_probe_read(&req.header_1, header_key_len, header_key_ptr);
+
+        // 1st header value
+        bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (1 * 24)));
+        bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (1 * 24 + 8)));
+        header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
+
+        bpf_probe_read(&req.value_1, header_key_len, header_key_ptr);
+
+        if (headers_len > 1) {
+            // 2nd header key
+            bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (2 * 24)));
+            bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (2 * 24 + 8)));
+            header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
+
+            bpf_probe_read(&req.header_2, header_key_len, header_key_ptr);
+
+            // 2nd header value
+            bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (3 * 24)));
+            bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (3 * 24 + 8)));
+            header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
+
+            bpf_probe_read(&req.value_2, header_key_len, header_key_ptr);
+        }
+
 //        if (headers_len > 2) {
 //            // 3rd header key
-//            bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (2 * 24)));
-//            bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (2 * 24 + 8)));
-//            bpf_printk("Header key len: %d", header_key_len);
+//            bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (4 * 24)));
+//            bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (4 * 24 + 8)));
 //            header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
 //
 //            bpf_probe_read(&req.header_3, header_key_len, header_key_ptr);
-//            bpf_trace_printk(req.header_3, sizeof(req.header_3));
 //
 //            // 3rd header value
-//            bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (3 * 24)));
-//            bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (3 * 24 + 8)));
-//            bpf_printk("Header key len: %d", header_key_len);
+//            bpf_probe_read(&header_key_ptr, sizeof(header_key_ptr), (void *)(header_arr_ptr + (5 * 24)));
+//            bpf_probe_read(&header_key_len, sizeof(header_key_len), (void *)(header_arr_ptr + (5 * 24 + 8)));
 //            header_key_len = header_key_len > MAX_HEADER_LEN ? MAX_HEADER_LEN : header_key_len;
 //
 //            bpf_probe_read(&req.value_3, header_key_len, header_key_ptr);
-//            bpf_trace_printk(req.value_3, sizeof(req.value_3));
 //        }
-//    }
+    }
 
     // extract key (address of msg)
     void *key = get_consistent_key(ctx, msg_ptr);
@@ -194,8 +181,6 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
 
         copy_byte_arrays(req.psc.TraceID, req.sc.TraceID, TRACE_ID_SIZE);
         generate_random_bytes(req.sc.SpanID, SPAN_ID_SIZE);
-
-        bpf_printk("Sarama create new sc from exist psc");
     } else {
         // generate new sc
         req.sc = generate_span_context();
@@ -219,9 +204,6 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
 
     bpf_map_update_elem(&publisher_message_events, &key, &req, 0);
     start_tracking_span(msg_ptr, &req.sc);
-
-//    // send back to instrumentor -- disable sending event back to perf channel
-//    bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &req, sizeof(req));
     return 0;
 }
 
@@ -238,8 +220,6 @@ int uprobe_syncProducer_SendMessage_Returns(struct pt_regs *ctx) {
     tmpReq.end_time = bpf_ktime_get_ns();
 
     tmpReq.goid = get_current_goroutine();
-
-    bpf_printk("Sarama current goroutine: %d", get_current_goroutine());
 
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));
     bpf_map_delete_elem(&publisher_message_events, &key);

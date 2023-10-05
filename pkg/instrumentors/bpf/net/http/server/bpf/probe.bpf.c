@@ -212,7 +212,9 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
     {
         if (sc_ptr != NULL) {
             // sc_ptr exist, read value of sc_ptr
-            bpf_probe_read(&httpReq.sc, sizeof(httpReq.sc), sc_ptr);
+            bpf_probe_read(&httpReq.psc, sizeof(httpReq.psc), sc_ptr);
+            copy_byte_arrays(httpReq.psc.TraceID, httpReq.sc.TraceID, TRACE_ID_SIZE);
+            generate_random_bytes(httpReq.sc.SpanID, SPAN_ID_SIZE);
         } else {
             // sc_ptr not exist, generate new value of src ptr
             httpReq.sc = generate_span_context();
@@ -245,9 +247,6 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
 
     // Write event
     httpReq.goid = get_current_goroutine();
-
-    bpf_printk("http/server current goroutine: %d", httpReq.goid);
-
     bpf_map_update_elem(&http_events, &key, &httpReq, 0);
     start_tracking_span(req_ctx_ptr, &httpReq.sc);
     return 0;
