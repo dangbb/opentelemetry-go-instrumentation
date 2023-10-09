@@ -16,21 +16,6 @@
 #include "goroutines.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
-//
-//#define MAX_CONCURRENT_EDGE 32
-//
-//struct goroutine_edge_t
-//{
-//    u64 parent_goid;
-//    u64 child_goid;
-//    u64 erase;
-//};
-//
-//struct {
-//    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
-//} events SEC(".maps");
-//
-//const struct goroutine_edge_t *unused __attribute__((unused));
 
 // Injected in init
 volatile const u64 goid_pos;
@@ -84,20 +69,13 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
             return 0;
         }
 
-        bpf_map_delete_elem(&gopc_to_pgoid, &gopc);
         u64 pgoid = 0;
         bpf_probe_read(&pgoid, sizeof(pgoid), pgoid_ptr);
+        bpf_map_delete_elem(&gopc_to_pgoid, &gopc);
 
         bpf_map_update_elem(&p_goroutines_map, &goid, &pgoid, 0);
-        bpf_printk("New edge: %d -> p: %d", goid, pgoid);
-//
-//        struct goroutine_edge_t edge = {};
-//
-//        edge.parent_goid = pgoid;
-//        edge.child_goid = goid;
-//        edge.erase = 0;
-//
-//        bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &edge, sizeof(edge));
+
+        bpf_printk("Create new edge: %d -> %d", goid, pgoid);
 
         return 0;
     }
@@ -109,16 +87,7 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
 
         // skip delete goid parent
         bpf_map_delete_elem(&p_goroutines_map, &goid);
-
-        bpf_printk("Erase edge: %d -> p", goid);
-//
-//        struct goroutine_edge_t edge = {};
-//
-//        edge.child_goid = goid;
-//        edge.erase = 1;
-//
-//        bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &edge, sizeof(edge));
-
+        bpf_printk("Remove edge: %d -> %d", goid);
         return 0;
     }
 

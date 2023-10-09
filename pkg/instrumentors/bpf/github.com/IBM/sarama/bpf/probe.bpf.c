@@ -180,10 +180,8 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     if (sc_ptr != NULL || asc_ptr != NULL) {
         if (sc_ptr != NULL) {
             bpf_probe_read(&req.psc, sizeof(req.psc), sc_ptr);
-            bpf_printk("Extract sc from current goroutine ptr");
         } else {
             bpf_probe_read(&req.psc, sizeof(req.psc), asc_ptr);
-            bpf_printk("Extract sc from ancestor pointer");
 
             req.is_goroutine = 1;
         }
@@ -201,16 +199,10 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
 
         // Only create new
         u32 status = bpf_map_update_elem(&sc_map, &go_id, &req.sc, 0);
-
-        if (status == 0) {
-            bpf_printk("sarama - create correlation success go_id %d", go_id);
-
-            void *new_sc_ptr = get_sc();
-            bpf_printk("sarama - After create, test exist goid %d - result %d", go_id, (new_sc_ptr == NULL) ? 0 : 1);
-        } else {
-            bpf_printk("sarama - create correlation fail go_id %d", go_id);
-        }
     }
+
+    req.goid = get_current_goroutine();
+    bpf_printk("xx - Sarama goid: %d", req.goid);
 
     bpf_map_update_elem(&publisher_message_events, &key, &req, 0);
     start_tracking_span(msg_ptr, &req.sc);
@@ -228,8 +220,6 @@ int uprobe_syncProducer_SendMessage_Returns(struct pt_regs *ctx) {
     struct publisher_message_t tmpReq = {};
     bpf_probe_read(&tmpReq, sizeof(tmpReq), req_ptr_map);
     tmpReq.end_time = bpf_ktime_get_ns();
-
-    tmpReq.goid = get_current_goroutine();
 
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));
     bpf_map_delete_elem(&publisher_message_events, &key);

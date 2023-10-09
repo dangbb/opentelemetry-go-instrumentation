@@ -223,21 +223,12 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
 
     // context of not exists
     if (sc_ptr == NULL) {
-        httpReq.trace_root = 1;
+        httpReq.trace_root = 0;
         // Set kv for sc span
         u64 go_id = get_current_goroutine();
 
         // Only create new
         u32 status = bpf_map_update_elem(&sc_map, &go_id, &httpReq.sc, 0);
-
-        if (status == 0) {
-            bpf_printk("net/http.Server - create correlation success go_id %d", go_id);
-
-            void *new_sc_ptr = get_sc();
-            bpf_printk("net/http.Server - After create, test exist goid %d - result %d", go_id, (new_sc_ptr == NULL) ? 0 : 1);
-        } else {
-            bpf_printk("net/http.Server - create correlation fail go_id %d", go_id);
-        }
     }
 
     // Get key
@@ -247,6 +238,8 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
 
     // Write event
     httpReq.goid = get_current_goroutine();
+    bpf_printk("xx - Server http goid: %d", httpReq.goid);
+
     bpf_map_update_elem(&http_events, &key, &httpReq, 0);
     start_tracking_span(req_ctx_ptr, &httpReq.sc);
     return 0;

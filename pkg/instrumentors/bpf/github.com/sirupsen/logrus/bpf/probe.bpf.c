@@ -28,6 +28,7 @@ struct log_event_t {
     u64 level;
     char log[MAX_LOG_SIZE];
     u64 goid;
+    u64 is_goroutine;
 };
 
 struct {
@@ -114,6 +115,7 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
             bpf_probe_read(&logEvent.psc, sizeof(logEvent.psc), sc_ptr);
         } else {
             bpf_probe_read(&logEvent.psc, sizeof(logEvent.psc), psc_ptr);
+            logEvent.is_goroutine = 1;
         }
 
         copy_byte_arrays(logEvent.psc.TraceID, logEvent.sc.TraceID, TRACE_ID_SIZE);
@@ -127,21 +129,14 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
         u64 go_id = get_current_goroutine();
 
         // Only create new
-        u32 status = bpf_map_update_elem(&sc_map, &go_id, &logEvent.sc, 0);
-
-        if (status == 0) {
-            bpf_printk("Logrus - create correlation success go_id %d", go_id);
-
-            void *new_sc_ptr = get_sc();
-            bpf_printk("Logrus - After create, test exist goid %d - result %d", go_id, (new_sc_ptr == NULL) ? 0 : 1);
-        } else {
-            bpf_printk("Logrus - create correlation fail go_id %d", go_id);
-        }
+        bpf_map_update_elem(&sc_map, &go_id, &logEvent.sc, 0);
     }
 
     // add to perf map
     // BPF_F_CURRENT_CPU flaf option ?
     logEvent.goid = get_current_goroutine();
+
+    bpf_printk("xx - Logrus goid: %d", logEvent.goid);
 
     void *key = get_consistent_key(ctx, entry_ptr);
     bpf_map_update_elem(&log_events, &key, &logEvent, 0);

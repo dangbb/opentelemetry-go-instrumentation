@@ -13,15 +13,16 @@ import (
 )
 
 type bpfLogEventT struct {
-	StartTime uint64
-	EndTime   uint64
-	Sc        bpfSpanContext
-	Psc       bpfSpanContext
-	TraceRoot uint64
-	Level     uint64
-	Log       [100]int8
-	_         [4]byte
-	Goid      uint64
+	StartTime   uint64
+	EndTime     uint64
+	Sc          bpfSpanContext
+	Psc         bpfSpanContext
+	TraceRoot   uint64
+	Level       uint64
+	Log         [100]int8
+	_           [4]byte
+	Goid        uint64
+	IsGoroutine uint64
 }
 
 type bpfSpanContext struct {

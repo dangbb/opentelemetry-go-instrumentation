@@ -107,7 +107,7 @@ func computeE(iterations int64) float64 {
 	wg.Wait()
 
 	// test library sirupsen/logrus
-	logLogrus()
+	go logLogrus()
 
 	return res
 }

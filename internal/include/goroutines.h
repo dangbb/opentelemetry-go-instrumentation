@@ -1,7 +1,7 @@
 #include "bpf_helpers.h"
 #include "span_context.h"
 
-#define MAX_SYSTEM_THREADS 20
+#define MAX_SYSTEM_THREADS 30
 #define MAX_DEPTH 16
 
 struct {
@@ -81,8 +81,10 @@ void delete_sc() {
 
 // ancestor goroutine manipulation
 // get sc of corresponding parent goroutine id for current goroutine id.
-void* get_nearest_ancestor_sc() {
+static __always_inline void* get_nearest_ancestor_sc() {
     u64 goid = get_current_goroutine();
+    bpf_printk("Check ancestor of %d", goid);
+    u64 cur = goid;
     u64 pgoid = 0;
 
     // travel through parent
@@ -90,7 +92,8 @@ void* get_nearest_ancestor_sc() {
         // extract parent goid
         void *pgoid_ptr = bpf_map_lookup_elem(&p_goroutines_map, &goid);
         if (pgoid_ptr == NULL) {
-            return 0;
+            bpf_printk("Not found ancestor for %d at %d", cur, goid);
+            return NULL;
         }
 
         bpf_probe_read(&pgoid, sizeof(pgoid), pgoid_ptr);
@@ -103,9 +106,12 @@ void* get_nearest_ancestor_sc() {
             continue;
         }
 
+        bpf_printk("Found ancestor for %d: %d", cur, pgoid);
+
         // exist, return
         return asc_ptr;
     }
     // reach max depth, but can find. Return NULL.
+    bpf_printk("Reach max depth for %d", cur);
     return NULL;
 }
