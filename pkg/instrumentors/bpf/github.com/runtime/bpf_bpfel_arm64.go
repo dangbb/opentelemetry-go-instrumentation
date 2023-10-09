@@ -65,9 +65,10 @@ type bpfProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
-	GoroutinesMap *ebpf.MapSpec `ebpf:"goroutines_map"`
-	ScMap         *ebpf.MapSpec `ebpf:"sc_map"`
-	SchedG_map    *ebpf.MapSpec `ebpf:"sched_g_map"`
+	GoroutinesMap   *ebpf.MapSpec `ebpf:"goroutines_map"`
+	P_goroutinesMap *ebpf.MapSpec `ebpf:"p_goroutines_map"`
+	ScMap           *ebpf.MapSpec `ebpf:"sc_map"`
+	SchedG_map      *ebpf.MapSpec `ebpf:"sched_g_map"`
 }
 
 // bpfObjects contains all objects after they have been loaded into the kernel.
@@ -89,14 +90,16 @@ func (o *bpfObjects) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
-	GoroutinesMap *ebpf.Map `ebpf:"goroutines_map"`
-	ScMap         *ebpf.Map `ebpf:"sc_map"`
-	SchedG_map    *ebpf.Map `ebpf:"sched_g_map"`
+	GoroutinesMap   *ebpf.Map `ebpf:"goroutines_map"`
+	P_goroutinesMap *ebpf.Map `ebpf:"p_goroutines_map"`
+	ScMap           *ebpf.Map `ebpf:"sc_map"`
+	SchedG_map      *ebpf.Map `ebpf:"sched_g_map"`
 }
 
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.GoroutinesMap,
+		m.P_goroutinesMap,
 		m.ScMap,
 		m.SchedG_map,
 	)

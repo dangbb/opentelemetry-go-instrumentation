@@ -175,18 +175,23 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     u64 key64 = (u64)key;
 
     void *sc_ptr = get_sc();
+    void *asc_ptr = get_nearest_ancestor_sc();
 
-    if (sc_ptr != NULL) {
+    if (sc_ptr != NULL || asc_ptr != NULL) {
+        if (sc_ptr != NULL) {
+            bpf_probe_read(&req.psc, sizeof(req.psc), sc_ptr);
+            bpf_printk("Extract sc from current goroutine ptr");
+        } else {
+            bpf_probe_read(&req.psc, sizeof(req.psc), asc_ptr);
+            bpf_printk("Extract sc from ancestor pointer");
+
+            req.is_goroutine = 1;
+        }
+
         // generate spanID, copy traceID
-        void *psc_ptr = get_sc();
-        bpf_probe_read(&req.psc, sizeof(req.psc), psc_ptr);
-
         copy_byte_arrays(req.psc.TraceID, req.sc.TraceID, TRACE_ID_SIZE);
         generate_random_bytes(req.sc.SpanID, SPAN_ID_SIZE);
     } else {
-        // check if parent goroutine id exist, and find in it first
-
-
         // generate new sc
         req.sc = generate_span_context();
 

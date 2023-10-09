@@ -81,6 +81,7 @@ type bpfMapSpecs struct {
 	Events           *ebpf.MapSpec `ebpf:"events"`
 	GoroutinesMap    *ebpf.MapSpec `ebpf:"goroutines_map"`
 	LogEvents        *ebpf.MapSpec `ebpf:"log_events"`
+	P_goroutinesMap  *ebpf.MapSpec `ebpf:"p_goroutines_map"`
 	ScMap            *ebpf.MapSpec `ebpf:"sc_map"`
 	SchedG_map       *ebpf.MapSpec `ebpf:"sched_g_map"`
 	TrackedSpans     *ebpf.MapSpec `ebpf:"tracked_spans"`
@@ -109,6 +110,7 @@ type bpfMaps struct {
 	Events           *ebpf.Map `ebpf:"events"`
 	GoroutinesMap    *ebpf.Map `ebpf:"goroutines_map"`
 	LogEvents        *ebpf.Map `ebpf:"log_events"`
+	P_goroutinesMap  *ebpf.Map `ebpf:"p_goroutines_map"`
 	ScMap            *ebpf.Map `ebpf:"sc_map"`
 	SchedG_map       *ebpf.Map `ebpf:"sched_g_map"`
 	TrackedSpans     *ebpf.Map `ebpf:"tracked_spans"`
@@ -120,6 +122,7 @@ func (m *bpfMaps) Close() error {
 		m.Events,
 		m.GoroutinesMap,
 		m.LogEvents,
+		m.P_goroutinesMap,
 		m.ScMap,
 		m.SchedG_map,
 		m.TrackedSpans,

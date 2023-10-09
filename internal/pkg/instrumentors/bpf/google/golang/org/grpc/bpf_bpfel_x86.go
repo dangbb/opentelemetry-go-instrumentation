@@ -86,6 +86,7 @@ type bpfMapSpecs struct {
 	GoroutinesMap          *ebpf.MapSpec `ebpf:"goroutines_map"`
 	GrpcEvents             *ebpf.MapSpec `ebpf:"grpc_events"`
 	HeadersBuffMap         *ebpf.MapSpec `ebpf:"headers_buff_map"`
+	P_goroutinesMap        *ebpf.MapSpec `ebpf:"p_goroutines_map"`
 	ScMap                  *ebpf.MapSpec `ebpf:"sc_map"`
 	SchedG_map             *ebpf.MapSpec `ebpf:"sched_g_map"`
 	StreamidToSpanContexts *ebpf.MapSpec `ebpf:"streamid_to_span_contexts"`
@@ -117,6 +118,7 @@ type bpfMaps struct {
 	GoroutinesMap          *ebpf.Map `ebpf:"goroutines_map"`
 	GrpcEvents             *ebpf.Map `ebpf:"grpc_events"`
 	HeadersBuffMap         *ebpf.Map `ebpf:"headers_buff_map"`
+	P_goroutinesMap        *ebpf.Map `ebpf:"p_goroutines_map"`
 	ScMap                  *ebpf.Map `ebpf:"sc_map"`
 	SchedG_map             *ebpf.Map `ebpf:"sched_g_map"`
 	StreamidToSpanContexts *ebpf.Map `ebpf:"streamid_to_span_contexts"`
@@ -131,6 +133,7 @@ func (m *bpfMaps) Close() error {
 		m.GoroutinesMap,
 		m.GrpcEvents,
 		m.HeadersBuffMap,
+		m.P_goroutinesMap,
 		m.ScMap,
 		m.SchedG_map,
 		m.StreamidToSpanContexts,

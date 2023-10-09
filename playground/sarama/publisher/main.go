@@ -85,12 +85,12 @@ func computeE(iterations int64) float64 {
 	}
 
 	// test library IBM/sarama
-	sendKafka("1")
-	// check if 2 different function produce same consistent key
-	sendKafka("2")
-	sendKafka("3")
-	sendKafka("4")
-	sendKafka("5")
+	go sendKafka("1")
+	//// check if 2 different function produce same consistent key
+	//go sendKafka("2")
+	//go sendKafka("3")
+	//go sendKafka("4")
+	//go sendKafka("5")
 	// test library sirupsen/logrus
 	logLogrus()
 

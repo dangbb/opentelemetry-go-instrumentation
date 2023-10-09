@@ -2,6 +2,7 @@
 #include "span_context.h"
 
 #define MAX_SYSTEM_THREADS 20
+#define MAX_DEPTH 16
 
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
@@ -20,14 +21,15 @@ struct {
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } sched_g_map SEC(".maps");
 
-// mapping between goid and pgoid
+// mapping between current goid to pgoid
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__type(key, u64);
 	__type(value, u64);
 	__uint(max_entries, MAX_SYSTEM_THREADS);
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
-} sched_g_map SEC(".maps");
+} p_goroutines_map SEC(".maps");
+
 
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
@@ -81,4 +83,34 @@ void delete_sc() {
     bpf_map_delete_elem(&sc_map, &go_id);
 
     bpf_printk("Remove correlation on go_id: %d", go_id);
+}
+
+// ancestor goroutine manipulation
+// get sc of corresponding parent goroutine id for current goroutine id.
+void* get_nearest_ancestor_sc() {
+    u64 goid = get_current_goroutine();
+    u64 pgoid = 0;
+
+    // travel through parent
+    for (u64 i = 0; i < MAX_DEPTH; i++) {
+        // extract parent goid
+        void *pgoid_ptr = bpf_map_lookup_elem(&p_goroutines_map, &goid);
+        if (pgoid_ptr == NULL) {
+            return 0;
+        }
+
+        bpf_probe_read(&pgoid, sizeof(pgoid), pgoid_ptr);
+
+        // try to extract sc for pgoid
+        void *asc_ptr = bpf_map_lookup_elem(&sc_map, &pgoid);
+        if (asc_ptr == NULL) {
+            // not exist, continue to find
+            continue;
+        }
+
+        // exist, return
+        return asc_ptr;
+    }
+    // reach max depth, but can find. Return NULL.
+    return NULL;
 }

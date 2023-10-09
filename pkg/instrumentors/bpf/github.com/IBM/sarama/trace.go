@@ -48,16 +48,17 @@ const (
 
 type Event struct {
 	context.BaseSpanProperties
-	Topic   [30]byte
-	Key     [20]byte
-	Value   [50]byte
-	_       [4]byte
-	Goid    uint64
-	Header1 [25]byte
-	Value1  [25]byte
-	Header2 [25]byte
-	Value2  [25]byte
-	_       [4]byte
+	Topic       [30]byte
+	Key         [20]byte
+	Value       [50]byte
+	_           [4]byte
+	Goid        uint64
+	Header1     [25]byte
+	Value1      [25]byte
+	Header2     [25]byte
+	Value2      [25]byte
+	_           [4]byte
+	IsGoroutine uint64
 	//Header3 [25]byte
 	//Value3  [25]byte
 }
@@ -236,38 +237,27 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	//headerValue2 := unix.ByteSliceToString(e.Value2[:])
 	//headerValue3 := unix.ByteSliceToString(e.Value3[:])
 
-	log.Logger.V(0).Info(fmt.Sprintf("Sarama: Value of default parent span, trace ID %s - span ID %s",
-		e.ParentSpanContext.TraceID,
-		e.ParentSpanContext.SpanID))
-
-	log.Logger.V(0).Info(fmt.Sprintf("Sarama: Value of default span, trace ID %s - span ID %s",
-		e.SpanContext.TraceID,
-		e.SpanContext.SpanID))
-
-	// reduce load for inner eBPF
-	spanId := e.SpanContext.SpanID
-	if !e.SpanContext.SpanID.IsValid() {
-		spanId = genRandomSpanId()
-	}
-
-	traceId := e.SpanContext.TraceID
-	if !e.SpanContext.TraceID.IsValid() {
-		traceId = genRandomTraceId()
-	}
+	psc := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    e.ParentSpanContext.TraceID,
+		SpanID:     e.ParentSpanContext.SpanID,
+		TraceFlags: trace.FlagsSampled,
+		Remote:     e.IsGoroutine > 0,
+	})
 
 	sc := trace.NewSpanContext(trace.SpanContextConfig{
-		TraceID:    traceId,
-		SpanID:     spanId,
+		TraceID:    e.SpanContext.TraceID,
+		SpanID:     e.SpanContext.SpanID,
 		TraceFlags: trace.FlagsSampled,
 	})
 
 	return &events.Event{
-		Name:        fmt.Sprintf("Sarama topic: %s", topic),
-		Library:     i.LibraryName(),
-		Kind:        trace.SpanKindServer,
-		StartTime:   int64(e.StartTime),
-		EndTime:     int64(e.EndTime),
-		SpanContext: &sc,
+		Name:              fmt.Sprintf("Sarama topic: %s", topic),
+		Library:           i.LibraryName(),
+		Kind:              trace.SpanKindServer,
+		StartTime:         int64(e.StartTime),
+		EndTime:           int64(e.EndTime),
+		SpanContext:       &sc,
+		ParentSpanContext: &psc,
 		Attributes: []attribute.KeyValue{
 			attribute.Key("key").String(key),
 			attribute.Key("value").String(value),
