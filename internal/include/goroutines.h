@@ -99,6 +99,7 @@ void* get_nearest_ancestor_sc() {
         void *asc_ptr = bpf_map_lookup_elem(&sc_map, &pgoid);
         if (asc_ptr == NULL) {
             // not exist, continue to find
+            goid = pgoid;
             continue;
         }
 

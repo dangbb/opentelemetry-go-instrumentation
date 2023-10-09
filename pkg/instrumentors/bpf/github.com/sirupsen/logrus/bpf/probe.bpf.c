@@ -106,11 +106,16 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
     bpf_probe_read(&logEvent.log, msg_len, path_ptr);
 
     void *sc_ptr = get_sc();
+    void *psc_ptr = get_nearest_ancestor_sc();
 
-    if (sc_ptr != NULL) {
+    if (sc_ptr != NULL || psc_ptr != NULL) {
         // generate spanID, copy traceID
-        void *psc_ptr = get_sc();
-        bpf_probe_read(&logEvent.psc, sizeof(logEvent.psc), psc_ptr);
+        if (sc_ptr != NULL) {
+            bpf_probe_read(&logEvent.psc, sizeof(logEvent.psc), sc_ptr);
+        } else {
+            bpf_probe_read(&logEvent.psc, sizeof(logEvent.psc), psc_ptr);
+        }
+
         copy_byte_arrays(logEvent.psc.TraceID, logEvent.sc.TraceID, TRACE_ID_SIZE);
         generate_random_bytes(logEvent.sc.SpanID, SPAN_ID_SIZE);
     } else {
