@@ -67,6 +67,7 @@ type bpfProgramSpecs struct {
 type bpfMapSpecs struct {
 	GoroutinesMap *ebpf.MapSpec `ebpf:"goroutines_map"`
 	ScMap         *ebpf.MapSpec `ebpf:"sc_map"`
+	SchedG_map    *ebpf.MapSpec `ebpf:"sched_g_map"`
 }
 
 // bpfObjects contains all objects after they have been loaded into the kernel.
@@ -90,12 +91,14 @@ func (o *bpfObjects) Close() error {
 type bpfMaps struct {
 	GoroutinesMap *ebpf.Map `ebpf:"goroutines_map"`
 	ScMap         *ebpf.Map `ebpf:"sc_map"`
+	SchedG_map    *ebpf.Map `ebpf:"sched_g_map"`
 }
 
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.GoroutinesMap,
 		m.ScMap,
+		m.SchedG_map,
 	)
 }
 

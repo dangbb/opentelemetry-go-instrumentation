@@ -11,6 +11,24 @@ struct {
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } goroutines_map SEC(".maps");
 
+// mapping between newg.sched.g to goroutine_id.
+struct {
+	__uint(type, BPF_MAP_TYPE_HASH);
+	__type(key, u64);
+	__type(value, u64);
+	__uint(max_entries, MAX_SYSTEM_THREADS);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} sched_g_map SEC(".maps");
+
+// mapping between goid and pgoid
+struct {
+	__uint(type, BPF_MAP_TYPE_HASH);
+	__type(key, u64);
+	__type(value, u64);
+	__uint(max_entries, MAX_SYSTEM_THREADS);
+	__uint(pinning, LIBBPF_PIN_BY_NAME);
+} sched_g_map SEC(".maps");
+
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
 	__type(key, u64);
@@ -23,6 +41,14 @@ struct {
 u64 get_current_goroutine() {
     u64 current_thread = bpf_get_current_pid_tgid();
     void* goid_ptr = bpf_map_lookup_elem(&goroutines_map, &current_thread);
+    u64 goid;
+    bpf_probe_read(&goid, sizeof(goid), goid_ptr);
+    return goid;
+}
+
+// get parent goroutine id.
+static __always_inline u64 get_goroutine_id_from_sched_g(u64 key) {
+    void* goid_ptr = bpf_map_lookup_elem(&sched_g_map, &key);
     u64 goid;
     bpf_probe_read(&goid, sizeof(goid), goid_ptr);
     return goid;

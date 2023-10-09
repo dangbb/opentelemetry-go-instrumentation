@@ -40,6 +40,8 @@ struct publisher_message_t
     char header_2[MAX_HEADER_LEN];
     char value_2[MAX_HEADER_LEN];
 
+    u64 is_goroutine;
+
 //    char header_3[MAX_HEADER_LEN];
 //    char value_3[MAX_HEADER_LEN];
 };
@@ -182,6 +184,9 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
         copy_byte_arrays(req.psc.TraceID, req.sc.TraceID, TRACE_ID_SIZE);
         generate_random_bytes(req.sc.SpanID, SPAN_ID_SIZE);
     } else {
+        // check if parent goroutine id exist, and find in it first
+
+
         // generate new sc
         req.sc = generate_span_context();
 

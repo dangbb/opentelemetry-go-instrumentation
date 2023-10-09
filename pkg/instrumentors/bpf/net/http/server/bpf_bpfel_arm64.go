@@ -85,6 +85,7 @@ type bpfMapSpecs struct {
 	HttpEvents                  *ebpf.MapSpec `ebpf:"http_events"`
 	ParentSpanContextStorageMap *ebpf.MapSpec `ebpf:"parent_span_context_storage_map"`
 	ScMap                       *ebpf.MapSpec `ebpf:"sc_map"`
+	SchedG_map                  *ebpf.MapSpec `ebpf:"sched_g_map"`
 	TrackedSpans                *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc            *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
 }
@@ -115,6 +116,7 @@ type bpfMaps struct {
 	HttpEvents                  *ebpf.Map `ebpf:"http_events"`
 	ParentSpanContextStorageMap *ebpf.Map `ebpf:"parent_span_context_storage_map"`
 	ScMap                       *ebpf.Map `ebpf:"sc_map"`
+	SchedG_map                  *ebpf.Map `ebpf:"sched_g_map"`
 	TrackedSpans                *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc            *ebpf.Map `ebpf:"tracked_spans_by_sc"`
 }
@@ -128,6 +130,7 @@ func (m *bpfMaps) Close() error {
 		m.HttpEvents,
 		m.ParentSpanContextStorageMap,
 		m.ScMap,
+		m.SchedG_map,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,
 	)
