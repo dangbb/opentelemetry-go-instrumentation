@@ -59,16 +59,17 @@ type bpfSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfProgramSpecs struct {
 	UprobeRuntimeCasgstatusByRegisters *ebpf.ProgramSpec `ebpf:"uprobe_runtime_casgstatus_ByRegisters"`
+	UprobeRuntimeNewproc1              *ebpf.ProgramSpec `ebpf:"uprobe_runtime_newproc1"`
 }
 
 // bpfMapSpecs contains maps before they are loaded into the kernel.
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
+	GopcToPgoid     *ebpf.MapSpec `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap   *ebpf.MapSpec `ebpf:"goroutines_map"`
 	P_goroutinesMap *ebpf.MapSpec `ebpf:"p_goroutines_map"`
 	ScMap           *ebpf.MapSpec `ebpf:"sc_map"`
-	SchedG_map      *ebpf.MapSpec `ebpf:"sched_g_map"`
 }
 
 // bpfObjects contains all objects after they have been loaded into the kernel.
@@ -90,18 +91,18 @@ func (o *bpfObjects) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
+	GopcToPgoid     *ebpf.Map `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap   *ebpf.Map `ebpf:"goroutines_map"`
 	P_goroutinesMap *ebpf.Map `ebpf:"p_goroutines_map"`
 	ScMap           *ebpf.Map `ebpf:"sc_map"`
-	SchedG_map      *ebpf.Map `ebpf:"sched_g_map"`
 }
 
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
+		m.GopcToPgoid,
 		m.GoroutinesMap,
 		m.P_goroutinesMap,
 		m.ScMap,
-		m.SchedG_map,
 	)
 }
 
@@ -110,11 +111,13 @@ func (m *bpfMaps) Close() error {
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfPrograms struct {
 	UprobeRuntimeCasgstatusByRegisters *ebpf.Program `ebpf:"uprobe_runtime_casgstatus_ByRegisters"`
+	UprobeRuntimeNewproc1              *ebpf.Program `ebpf:"uprobe_runtime_newproc1"`
 }
 
 func (p *bpfPrograms) Close() error {
 	return _BpfClose(
 		p.UprobeRuntimeCasgstatusByRegisters,
+		p.UprobeRuntimeNewproc1,
 	)
 }
 

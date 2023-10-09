@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -85,12 +86,26 @@ func computeE(iterations int64) float64 {
 	}
 
 	// test library IBM/sarama
-	go sendKafka("1")
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+
+	go func() {
+		defer wg.Done()
+		go sendKafka("1")
+	}()
 	//// check if 2 different function produce same consistent key
-	//go sendKafka("2")
-	//go sendKafka("3")
-	//go sendKafka("4")
-	//go sendKafka("5")
+	go func() {
+		defer wg.Done()
+		go sendKafka("2")
+	}()
+
+	go func() {
+		defer wg.Done()
+		go sendKafka("3")
+	}()
+
+	wg.Wait()
+
 	// test library sirupsen/logrus
 	logLogrus()
 

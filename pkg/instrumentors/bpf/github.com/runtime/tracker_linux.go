@@ -33,7 +33,7 @@ func (i *Instrumentor) LibraryName() string {
 }
 
 func (i *Instrumentor) FuncNames() []string {
-	return []string{"runtime.casgstatus"}
+	return []string{"runtime.casgstatus", "runtime.newproc1"}
 }
 
 func (i *Instrumentor) Load(ctx *context.InstrumentorContext) error {
@@ -75,9 +75,19 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 		return
 	}
 
-	up, err := ctx.Executable.Uprobe("", i.bpfObjects.UprobeRuntimeCasgstatusByRegisters, &link.UprobeOptions{
-		Address: offset,
-	})
+	var up link.Link
+
+	switch funcName {
+	case "runtime.casgstatus":
+		up, err = ctx.Executable.Uprobe("", i.bpfObjects.UprobeRuntimeCasgstatusByRegisters, &link.UprobeOptions{
+			Address: offset,
+		})
+	case "runtime.newproc1":
+		up, err = ctx.Executable.Uprobe("", i.bpfObjects.UprobeRuntimeNewproc1, &link.UprobeOptions{
+			Address: offset,
+		})
+	}
+
 	if err != nil {
 		logger.Error(err, "could not insert start uprobe. Skipping")
 		return

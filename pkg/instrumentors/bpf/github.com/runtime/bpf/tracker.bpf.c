@@ -20,6 +20,16 @@ char __license[] SEC("license") = "Dual MIT/GPL";
 // Injected in init
 volatile const u64 goid_pos;
 
+SEC("uprobe/runtime_newproc1")
+int uprobe_runtime_newproc1(struct pt_regs *ctx) {
+    void *callergp_ptr = get_argument(ctx, 2);
+
+    u64 goid = 0;
+    bpf_probe_read(&goid, sizeof(goid), (void *)(callergp_ptr + 152));
+
+    return 0;
+}
+
 SEC("uprobe/runtime_casgstatus")
 int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
     void *newg = get_argument(ctx, 1);
@@ -30,17 +40,21 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
 
     bpf_probe_read(&goid, sizeof(goid), (void *)(newg+goid_pos));
 
-    // extract value of newg.sched.g at 72
-    u64 newg_sched_g = 0;
-    bpf_probe_read(&newg_sched_g, sizeof(newg_sched_g), (void *)(newg + 72));
+    // extract value of gopc (caller)
+    u64 gopc = 0;
+    bpf_probe_read(&gopc, sizeof(gopc), (void *)(newg + 296));
 
-    // Show parent goroutine for current goroutine, and send it back to golang server
-    u64 p_goroutine_id = get_goroutine_id_from_sched_g(newg_sched_g);
+    // extract value of startpc (executor)
+    u64 startpc = 0;
+    bpf_probe_read(&startpc, sizeof(startpc), (void *)(newg + 312));
+
+    // extract current goroutine
+    u64 cur_goid = get_current_goroutine();
 
     // creating
     if (newval == 1 && oldval == 6) {
-        u64 parent_goroutine_id = get_current_goroutine();
-        bpf_map_update_elem(&sched_g_map, &newg_sched_g, &parent_goroutine_id, 0);
+        // get value of parent goroutine by access newproc1's second argument
+        bpf_map_update_elem(&gopc_to_pgoid, &gopc, &cur_goid, 0);
 
         return 0;
     }
@@ -50,16 +64,17 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         u64 current_thread = bpf_get_current_pid_tgid();
         bpf_map_update_elem(&goroutines_map, &current_thread, &goid, 0);
 
-        if (goid == p_goroutine_id) {
+        void* pgoid_ptr = bpf_map_lookup_elem(&gopc_to_pgoid, &gopc);
+        if (pgoid_ptr == NULL) {
             return 0;
         }
 
-        // TODO consider move to golang to handle.
-        bpf_map_update_elem(&p_goroutines_map, &goid, &p_goroutine_id, 0);
-        // remove map when key newg_sched_g in sched_g_map
-        bpf_map_delete_elem(&sched_g_map, &newg_sched_g);
+        bpf_map_delete_elem(&gopc_to_pgoid, &gopc);
+        u64 pgoid = 0;
+        bpf_probe_read(&pgoid, sizeof(pgoid), pgoid_ptr);
 
-        bpf_printk("Create new link: p %d - c %d", p_goroutine_id, goid);
+        bpf_map_update_elem(&p_goroutines_map, &goid, &pgoid, 0);
+        bpf_printk("New edge: %d -> p: %d", goid, pgoid);
 
         return 0;
     }
@@ -67,12 +82,10 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
     // removing
     if (newval == 6) {
         // remove mapping between current goid and pgoid
+        bpf_map_delete_elem(&goroutines_map, &goid);
         bpf_map_delete_elem(&p_goroutines_map, &goid);
-        // try to remove, in case no running command is called
-        bpf_map_delete_elem(&sched_g_map, &newg_sched_g);
 
-        bpf_printk("Remove link: p %d - c %d", p_goroutine_id, goid);
-
+        bpf_printk("Erase edge: %d -> p", goid);
         return 0;
     }
 

@@ -12,14 +12,14 @@ struct {
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } goroutines_map SEC(".maps");
 
-// mapping between newg.sched.g to goroutine_id.
+// mapping between gopc and parent goroutine id
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__type(key, u64);
 	__type(value, u64);
 	__uint(max_entries, MAX_SYSTEM_THREADS);
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
-} sched_g_map SEC(".maps");
+} gopc_to_pgoid SEC(".maps");
 
 // mapping between current goid to pgoid
 struct {
@@ -49,9 +49,9 @@ u64 get_current_goroutine() {
 }
 
 // get parent goroutine id.
-static __always_inline u64 get_goroutine_id_from_sched_g(u64 key) {
-    void* goid_ptr = bpf_map_lookup_elem(&sched_g_map, &key);
-    u64 goid;
+static __always_inline u64 get_pgoid_from_gopc(u64 key) {
+    void* goid_ptr = bpf_map_lookup_elem(&gopc_to_pgoid, &key);
+    u64 goid = 0;
     bpf_probe_read(&goid, sizeof(goid), goid_ptr);
     return goid;
 }
@@ -62,16 +62,12 @@ int is_sc_exist() {
 
     void *sc_ptr = bpf_map_lookup_elem(&sc_map, &go_id);
 
-    bpf_printk("Check sc exist for goid %d - result %d", go_id, (sc_ptr == NULL) ? 0 : 1);
-
     return (sc_ptr == NULL) ? 0 : 1;
 }
 
 // get sc record
 static __always_inline struct span_context *get_sc() {
     u64 go_id = get_current_goroutine();
-
-    bpf_printk("Get sc for %d", go_id);
 
     return bpf_map_lookup_elem(&sc_map, &go_id);
 }
@@ -81,8 +77,6 @@ void delete_sc() {
     u64 go_id = get_current_goroutine();
 
     bpf_map_delete_elem(&sc_map, &go_id);
-
-    bpf_printk("Remove correlation on go_id: %d", go_id);
 }
 
 // ancestor goroutine manipulation
