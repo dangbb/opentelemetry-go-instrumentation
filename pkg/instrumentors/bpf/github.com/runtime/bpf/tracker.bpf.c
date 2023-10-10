@@ -66,7 +66,7 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         event1.type = GOPC_PGOID;
 
         bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event1, sizeof(event1));
-
+        bpf_printk("Type 1, gopc %d - pgoid %d", gopc, cur_goid);
         return 0;
     }
 
@@ -82,10 +82,7 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         u64 pgoid = 0;
         bpf_probe_read(&pgoid, sizeof(pgoid), pgoid_ptr);
         bpf_map_delete_elem(&gopc_to_pgoid, &gopc);
-
         bpf_map_update_elem(&p_goroutines_map, &goid, &pgoid, 0);
-
-        bpf_printk("Create new edge: %d -> %d", goid, pgoid);
 
         // send type 2 event
         struct gmap_t event2 = {};
@@ -95,6 +92,7 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         event2.type = CURTHREAD_GOID;
 
         bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event2, sizeof(event2));
+        bpf_printk("Type 2, cur thread %d - goid %d", current_thread, goid);
 
         // send type 3 event
         struct gmap_t event3 = {};
@@ -104,6 +102,7 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         event3.type = CURTHREAD_GOPC;
 
         bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
+        bpf_printk("Type 3, cur thread %d - gopc %d", current_thread, gopc);
 
         return 0;
     }
@@ -115,7 +114,6 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
 
         // skip delete goid parent
         bpf_map_delete_elem(&p_goroutines_map, &goid);
-        bpf_printk("Remove edge: %d -> %d", goid);
         return 0;
     }
 

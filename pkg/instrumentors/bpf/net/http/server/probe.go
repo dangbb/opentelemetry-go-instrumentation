@@ -269,12 +269,12 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			logger.Info(fmt.Sprintf("net/http - Get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s",
+			fmt.Printf("Server get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
 				event.Type,
 				event.Key,
 				event.Value,
 				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String()))
+				event.Sc.SpanID.String())
 
 			if event.Type != 4 {
 				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not CURTHREAD_SC")
@@ -283,7 +283,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 			goid, ok := gmap.GetCurThread2GoId(event.Key)
 			if !ok {
-				logger.Info("Goroutine id for thread %d not found", event.Key)
+				logger.Info(fmt.Sprintf("Goroutine id for thread %d not found", event.Key))
 				continue
 			}
 
@@ -300,6 +300,10 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			}
 
 			gmap.SetGoId2Sc(goid, event.Sc)
+			logger.Info("[DEBUG] - Create map: %d - TraceID: %s - SpanID: %s\n",
+				goid,
+				event.Sc.TraceID.String(),
+				event.Sc.SpanID.String())
 		}
 	}()
 
@@ -309,14 +313,6 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 func (h *Instrumentor) convertEvent(e *Event) *events.Event {
 	method := unix.ByteSliceToString(e.Method[:])
 	path := unix.ByteSliceToString(e.Path[:])
-
-	log.Logger.V(0).Info(fmt.Sprintf("net/http.Server: Value of default parent span, trace ID %s - span ID %s",
-		e.ParentSpanContext.TraceID,
-		e.ParentSpanContext.SpanID))
-
-	log.Logger.V(0).Info(fmt.Sprintf("net/http.Server: Value of default span, trace ID %s - span ID %s",
-		e.SpanContext.TraceID,
-		e.SpanContext.SpanID))
 
 	sc := trace.NewSpanContext(trace.SpanContextConfig{
 		TraceID:    e.SpanContext.TraceID,

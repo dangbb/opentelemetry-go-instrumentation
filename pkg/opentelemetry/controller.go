@@ -74,7 +74,7 @@ func (c *Controller) getTracer(libName string) trace.Tracer {
 
 // Trace creates a trace span for event.
 func (c *Controller) Trace(event *events.Event) {
-	log.Logger.V(0).Info("got event", "attrs", event.Attributes)
+	//log.Logger.V(0).Info("got event", "attrs", event.Attributes)
 	ctx := context.Background()
 
 	if event.SpanContext == nil {

@@ -140,12 +140,12 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			continue
 		}
 
-		logger.Info(fmt.Sprintf("Get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s",
+		fmt.Printf("Tracker get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
 			event.Type,
 			event.Key,
 			event.Value,
 			event.Sc.TraceID.String(),
-			event.Sc.SpanID.String()))
+			event.Sc.SpanID.String())
 
 		switch event.Type {
 		case 1: // TODO using const to store these
@@ -155,15 +155,16 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 		case 3: // TODO using const to store these
 			goid, ok := gmap.GetCurThread2GoId(event.Key)
 			if !ok {
-				logger.Info("Not found goid for thread %d", event.Key)
+				logger.Info(fmt.Sprintf("Not found goid for thread %d", event.Key))
 				continue
 			}
 			pgoid, ok := gmap.GetGoPc2GoId(event.Key)
 			if !ok {
-				logger.Info("Not found p goid for gopc %d", event.Key)
+				logger.Info(fmt.Sprintf("Not found p goid for gopc %d", event.Key))
 				continue
 			}
 			gmap.SetGoId2PGoId(goid, pgoid)
+			logger.Info("[DEBUG] - Create edge: %d -> %d\n", goid, pgoid)
 		}
 	}
 }

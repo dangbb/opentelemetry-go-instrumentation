@@ -22,7 +22,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/exp/rand"
 	"golang.org/x/sys/unix"
@@ -37,6 +36,7 @@ import (
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpffs"
 	"go.opentelemetry.io/auto/pkg/instrumentors/context"
 	"go.opentelemetry.io/auto/pkg/instrumentors/events"
+	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"go.opentelemetry.io/auto/pkg/instrumentors/utils"
 	"go.opentelemetry.io/auto/pkg/log"
 	"go.opentelemetry.io/otel/trace"
@@ -220,7 +220,7 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 			goid, ok := gmap.GetCurThread2GoId(event.CurThread)
 			if !ok {
-				logger.Info("Not found goroutine id for thread: %d", event.CurThread)
+				logger.Info(fmt.Sprintf("Not found goroutine id for thread: %d", event.CurThread))
 				continue
 			}
 
@@ -263,12 +263,12 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			logger.Info(fmt.Sprintf("net/http - Get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s",
+			fmt.Printf("Sarama get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
 				event.Type,
 				event.Key,
 				event.Value,
 				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String()))
+				event.Sc.SpanID.String())
 
 			if event.Type != 4 {
 				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not CURTHREAD_SC")
@@ -277,7 +277,7 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 			goid, ok := gmap.GetCurThread2GoId(event.Key)
 			if !ok {
-				logger.Info("Goroutine id for thread %d not found", event.Key)
+				logger.Info(fmt.Sprintf("Goroutine id for thread %d not found", event.Key))
 				continue
 			}
 
@@ -294,6 +294,10 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			}
 
 			gmap.SetGoId2Sc(goid, event.Sc)
+			logger.Info("[DEBUG] - Create map: %d - TraceID: %s - SpanID: %s\n",
+				goid,
+				event.Sc.TraceID.String(),
+				event.Sc.SpanID.String())
 		}
 	}()
 

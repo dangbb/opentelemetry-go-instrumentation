@@ -207,7 +207,6 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
 
     req.goid = get_current_goroutine();
     req.cur_thread = cur_thread;
-    bpf_printk("xx - Sarama goid: %d", req.goid);
 
     // send type 4 event
     struct gmap_t event4 = {};
@@ -215,6 +214,8 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     event4.key = cur_thread;
     event4.sc = req.sc;
     event4.type = CURTHREAD_SC;
+
+    bpf_printk("Type 4, sarama thread %d - goid %d", cur_thread, req.goid);
 
     bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event4, sizeof(event4));
 
