@@ -80,11 +80,8 @@ type bpfMapSpecs struct {
 	AllocMap                  *ebpf.MapSpec `ebpf:"alloc_map"`
 	Events                    *ebpf.MapSpec `ebpf:"events"`
 	GolangMapbucketStorageMap *ebpf.MapSpec `ebpf:"golang_mapbucket_storage_map"`
-	GopcToPgoid               *ebpf.MapSpec `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap             *ebpf.MapSpec `ebpf:"goroutines_map"`
 	HttpEvents                *ebpf.MapSpec `ebpf:"http_events"`
-	P_goroutinesMap           *ebpf.MapSpec `ebpf:"p_goroutines_map"`
-	ScMap                     *ebpf.MapSpec `ebpf:"sc_map"`
 	TrackedSpans              *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc          *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
 }
@@ -111,11 +108,8 @@ type bpfMaps struct {
 	AllocMap                  *ebpf.Map `ebpf:"alloc_map"`
 	Events                    *ebpf.Map `ebpf:"events"`
 	GolangMapbucketStorageMap *ebpf.Map `ebpf:"golang_mapbucket_storage_map"`
-	GopcToPgoid               *ebpf.Map `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap             *ebpf.Map `ebpf:"goroutines_map"`
 	HttpEvents                *ebpf.Map `ebpf:"http_events"`
-	P_goroutinesMap           *ebpf.Map `ebpf:"p_goroutines_map"`
-	ScMap                     *ebpf.Map `ebpf:"sc_map"`
 	TrackedSpans              *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc          *ebpf.Map `ebpf:"tracked_spans_by_sc"`
 }
@@ -125,11 +119,8 @@ func (m *bpfMaps) Close() error {
 		m.AllocMap,
 		m.Events,
 		m.GolangMapbucketStorageMap,
-		m.GopcToPgoid,
 		m.GoroutinesMap,
 		m.HttpEvents,
-		m.P_goroutinesMap,
-		m.ScMap,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,
 	)

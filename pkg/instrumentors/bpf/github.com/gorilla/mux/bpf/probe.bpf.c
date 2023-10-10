@@ -82,32 +82,7 @@ int uprobe_GorillaMux_ServeHTTP(struct pt_regs *ctx) {
     bpf_probe_read(&req_ctx_ptr, sizeof(req_ctx_ptr), (void *)(req_ptr + ctx_ptr_pos));
     void *key = get_consistent_key(ctx, (void *)(req_ptr + ctx_ptr_pos));
 
-    // Write event
-    void *sc_ptr = get_sc();
-
-    // context of not exists
-    if (sc_ptr != NULL) {
-        bpf_probe_read(&httpReq.psc, sizeof(httpReq.psc), sc_ptr);
-        copy_byte_arrays(httpReq.psc.TraceID, httpReq.sc.TraceID, TRACE_ID_SIZE);
-        generate_random_bytes(httpReq.sc.SpanID, SPAN_ID_SIZE);
-    } else {
-        httpReq.sc = generate_span_context();
-        httpReq.trace_root = 1;
-        // Set kv for sc span
-        u64 go_id = get_current_goroutine();
-
-        // Only create new
-        u32 status = bpf_map_update_elem(&sc_map, &go_id, &httpReq.sc, 0);
-
-        if (status == 0) {
-            bpf_printk("gorilla.mux - create correlation success go_id %d", go_id);
-
-            void *new_sc_ptr = get_sc();
-            bpf_printk("gorilla.mux - After create, test exist goid %d - result %d", go_id, (new_sc_ptr == NULL) ? 0 : 1);
-        } else {
-            bpf_printk("gorilla.mux - create correlation fail go_id %d", go_id);
-        }
-    }
+    httpReq.sc = generate_span_context();
 
     bpf_map_update_elem(&http_events, &key, &httpReq, 0);
     start_tracking_span(req_ctx_ptr, &httpReq.sc);

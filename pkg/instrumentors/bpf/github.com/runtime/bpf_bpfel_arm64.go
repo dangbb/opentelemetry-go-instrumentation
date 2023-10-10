@@ -15,13 +15,11 @@ import (
 type bpfGmapT struct {
 	Key   uint64
 	Value uint64
-	Sc    bpfSpanContext
-	Type  uint64
-}
-
-type bpfSpanContext struct {
-	TraceID [16]uint8
-	SpanID  [8]uint8
+	Sc    struct {
+		TraceID [16]uint8
+		SpanID  [8]uint8
+	}
+	Type uint64
 }
 
 // loadBpf returns the embedded CollectionSpec for bpf.
@@ -73,12 +71,9 @@ type bpfProgramSpecs struct {
 //
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
-	GmapEvents      *ebpf.MapSpec `ebpf:"gmap_events"`
-	GopcToPgoid     *ebpf.MapSpec `ebpf:"gopc_to_pgoid"`
-	GoroutinesMap   *ebpf.MapSpec `ebpf:"goroutines_map"`
-	P_goroutinesMap *ebpf.MapSpec `ebpf:"p_goroutines_map"`
-	PlaceholderMap  *ebpf.MapSpec `ebpf:"placeholder_map"`
-	ScMap           *ebpf.MapSpec `ebpf:"sc_map"`
+	GmapEvents     *ebpf.MapSpec `ebpf:"gmap_events"`
+	GoroutinesMap  *ebpf.MapSpec `ebpf:"goroutines_map"`
+	PlaceholderMap *ebpf.MapSpec `ebpf:"placeholder_map"`
 }
 
 // bpfObjects contains all objects after they have been loaded into the kernel.
@@ -100,22 +95,16 @@ func (o *bpfObjects) Close() error {
 //
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
-	GmapEvents      *ebpf.Map `ebpf:"gmap_events"`
-	GopcToPgoid     *ebpf.Map `ebpf:"gopc_to_pgoid"`
-	GoroutinesMap   *ebpf.Map `ebpf:"goroutines_map"`
-	P_goroutinesMap *ebpf.Map `ebpf:"p_goroutines_map"`
-	PlaceholderMap  *ebpf.Map `ebpf:"placeholder_map"`
-	ScMap           *ebpf.Map `ebpf:"sc_map"`
+	GmapEvents     *ebpf.Map `ebpf:"gmap_events"`
+	GoroutinesMap  *ebpf.Map `ebpf:"goroutines_map"`
+	PlaceholderMap *ebpf.Map `ebpf:"placeholder_map"`
 }
 
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.GmapEvents,
-		m.GopcToPgoid,
 		m.GoroutinesMap,
-		m.P_goroutinesMap,
 		m.PlaceholderMap,
-		m.ScMap,
 	)
 }
 

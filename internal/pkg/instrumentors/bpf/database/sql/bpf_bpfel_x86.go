@@ -78,10 +78,7 @@ type bpfProgramSpecs struct {
 type bpfMapSpecs struct {
 	AllocMap         *ebpf.MapSpec `ebpf:"alloc_map"`
 	Events           *ebpf.MapSpec `ebpf:"events"`
-	GopcToPgoid      *ebpf.MapSpec `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap    *ebpf.MapSpec `ebpf:"goroutines_map"`
-	P_goroutinesMap  *ebpf.MapSpec `ebpf:"p_goroutines_map"`
-	ScMap            *ebpf.MapSpec `ebpf:"sc_map"`
 	SqlEvents        *ebpf.MapSpec `ebpf:"sql_events"`
 	TrackedSpans     *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
@@ -108,10 +105,7 @@ func (o *bpfObjects) Close() error {
 type bpfMaps struct {
 	AllocMap         *ebpf.Map `ebpf:"alloc_map"`
 	Events           *ebpf.Map `ebpf:"events"`
-	GopcToPgoid      *ebpf.Map `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap    *ebpf.Map `ebpf:"goroutines_map"`
-	P_goroutinesMap  *ebpf.Map `ebpf:"p_goroutines_map"`
-	ScMap            *ebpf.Map `ebpf:"sc_map"`
 	SqlEvents        *ebpf.Map `ebpf:"sql_events"`
 	TrackedSpans     *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc *ebpf.Map `ebpf:"tracked_spans_by_sc"`
@@ -121,10 +115,7 @@ func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.AllocMap,
 		m.Events,
-		m.GopcToPgoid,
 		m.GoroutinesMap,
-		m.P_goroutinesMap,
-		m.ScMap,
 		m.SqlEvents,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,

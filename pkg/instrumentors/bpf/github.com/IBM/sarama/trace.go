@@ -294,10 +294,10 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			}
 
 			gmap.SetGoId2Sc(goid, event.Sc)
-			logger.Info("[DEBUG] - Create map: %d - TraceID: %s - SpanID: %s\n",
+			logger.Info(fmt.Sprintf("[DEBUG] - Create map: %d - TraceID: %s - SpanID: %s\n",
 				goid,
 				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String())
+				event.Sc.SpanID.String()))
 		}
 	}()
 

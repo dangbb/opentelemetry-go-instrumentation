@@ -83,12 +83,9 @@ type bpfProgramSpecs struct {
 type bpfMapSpecs struct {
 	AllocMap               *ebpf.MapSpec `ebpf:"alloc_map"`
 	Events                 *ebpf.MapSpec `ebpf:"events"`
-	GopcToPgoid            *ebpf.MapSpec `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap          *ebpf.MapSpec `ebpf:"goroutines_map"`
 	GrpcEvents             *ebpf.MapSpec `ebpf:"grpc_events"`
 	HeadersBuffMap         *ebpf.MapSpec `ebpf:"headers_buff_map"`
-	P_goroutinesMap        *ebpf.MapSpec `ebpf:"p_goroutines_map"`
-	ScMap                  *ebpf.MapSpec `ebpf:"sc_map"`
 	StreamidToSpanContexts *ebpf.MapSpec `ebpf:"streamid_to_span_contexts"`
 	TrackedSpans           *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc       *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
@@ -115,12 +112,9 @@ func (o *bpfObjects) Close() error {
 type bpfMaps struct {
 	AllocMap               *ebpf.Map `ebpf:"alloc_map"`
 	Events                 *ebpf.Map `ebpf:"events"`
-	GopcToPgoid            *ebpf.Map `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap          *ebpf.Map `ebpf:"goroutines_map"`
 	GrpcEvents             *ebpf.Map `ebpf:"grpc_events"`
 	HeadersBuffMap         *ebpf.Map `ebpf:"headers_buff_map"`
-	P_goroutinesMap        *ebpf.Map `ebpf:"p_goroutines_map"`
-	ScMap                  *ebpf.Map `ebpf:"sc_map"`
 	StreamidToSpanContexts *ebpf.Map `ebpf:"streamid_to_span_contexts"`
 	TrackedSpans           *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc       *ebpf.Map `ebpf:"tracked_spans_by_sc"`
@@ -130,12 +124,9 @@ func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.AllocMap,
 		m.Events,
-		m.GopcToPgoid,
 		m.GoroutinesMap,
 		m.GrpcEvents,
 		m.HeadersBuffMap,
-		m.P_goroutinesMap,
-		m.ScMap,
 		m.StreamidToSpanContexts,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,

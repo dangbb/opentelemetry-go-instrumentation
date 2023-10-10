@@ -226,7 +226,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 			goid, ok := gmap.GetCurThread2GoId(event.CurThread)
 			if !ok {
-				logger.Info("Not found goroutine id for thread: %d", event.CurThread)
+				logger.Info(fmt.Sprintf("Not found goroutine id for thread: %d", event.CurThread))
 				continue
 			}
 
@@ -300,10 +300,10 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			}
 
 			gmap.SetGoId2Sc(goid, event.Sc)
-			logger.Info("[DEBUG] - Create map: %d - TraceID: %s - SpanID: %s\n",
+			logger.Info(fmt.Sprintf("[DEBUG] - Create map: %d - TraceID: %s - SpanID: %s\n",
 				goid,
 				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String())
+				event.Sc.SpanID.String()))
 		}
 	}()
 

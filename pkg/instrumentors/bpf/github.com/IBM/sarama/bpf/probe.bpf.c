@@ -176,32 +176,7 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     void *key = get_consistent_key(ctx, msg_ptr);
     u64 key64 = (u64)key;
 
-    void *sc_ptr = get_sc();
-    void *asc_ptr = get_nearest_ancestor_sc();
-
-    if (sc_ptr != NULL || asc_ptr != NULL) {
-        if (sc_ptr != NULL) {
-            bpf_probe_read(&req.psc, sizeof(req.psc), sc_ptr);
-        } else {
-            bpf_probe_read(&req.psc, sizeof(req.psc), asc_ptr);
-
-            req.is_goroutine = 1;
-        }
-
-        // generate spanID, copy traceID
-        copy_byte_arrays(req.psc.TraceID, req.sc.TraceID, TRACE_ID_SIZE);
-        generate_random_bytes(req.sc.SpanID, SPAN_ID_SIZE);
-    } else {
-        // generate new sc
-        req.sc = generate_span_context();
-
-        req.trace_root = 1;
-        // Set kv for sc span
-        u64 go_id = get_current_goroutine();
-
-        // Only create new
-        u32 status = bpf_map_update_elem(&sc_map, &go_id, &req.sc, 0);
-    }
+    req.sc = generate_span_context();
 
     u64 cur_thread = bpf_get_current_pid_tgid();
 
@@ -239,10 +214,6 @@ int uprobe_syncProducer_SendMessage_Returns(struct pt_regs *ctx) {
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));
     bpf_map_delete_elem(&publisher_message_events, &key);
     stop_tracking_span(&tmpReq.sc);
-
-    if (tmpReq.trace_root > 0) {
-        delete_sc();
-    }
 
     return 0;
 }

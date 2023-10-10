@@ -202,7 +202,6 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
 
     // Propagate context
     struct span_context *parent_ctx = extract_context_from_req_headers(req_ptr + headers_ptr_pos);
-    void *sc_ptr = get_sc();
 
     if (parent_ctx != NULL)
     {
@@ -212,25 +211,7 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
     }
     else
     {
-        if (sc_ptr != NULL) {
-            // sc_ptr exist, read value of sc_ptr
-            bpf_probe_read(&httpReq.psc, sizeof(httpReq.psc), sc_ptr);
-            copy_byte_arrays(httpReq.psc.TraceID, httpReq.sc.TraceID, TRACE_ID_SIZE);
-            generate_random_bytes(httpReq.sc.SpanID, SPAN_ID_SIZE);
-        } else {
-            // sc_ptr not exist, generate new value of src ptr
-            httpReq.sc = generate_span_context();
-        }
-    }
-
-    // context of not exists
-    if (sc_ptr == NULL) {
-        httpReq.trace_root = 0;
-        // Set kv for sc span
-        u64 go_id = get_current_goroutine();
-
-        // Only create new
-        u32 status = bpf_map_update_elem(&sc_map, &go_id, &httpReq.sc, 0);
+        httpReq.sc = generate_span_context();
     }
 
     // Get key

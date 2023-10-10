@@ -108,31 +108,7 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
     bpf_probe_read(&path_ptr, sizeof(path_ptr), (void *)(entry_ptr + message_ptr_pos));
     bpf_probe_read(&logEvent.log, msg_len, path_ptr);
 
-    void *sc_ptr = get_sc();
-    void *psc_ptr = get_nearest_ancestor_sc();
-
-    if (sc_ptr != NULL || psc_ptr != NULL) {
-        // generate spanID, copy traceID
-        if (sc_ptr != NULL) {
-            bpf_probe_read(&logEvent.psc, sizeof(logEvent.psc), sc_ptr);
-        } else {
-            bpf_probe_read(&logEvent.psc, sizeof(logEvent.psc), psc_ptr);
-            logEvent.is_goroutine = 1;
-        }
-
-        copy_byte_arrays(logEvent.psc.TraceID, logEvent.sc.TraceID, TRACE_ID_SIZE);
-        generate_random_bytes(logEvent.sc.SpanID, SPAN_ID_SIZE);
-    } else {
-        // generate new sc
-        logEvent.sc = generate_span_context();
-
-        logEvent.trace_root = 1;
-        // Set kv for sc span
-        u64 go_id = get_current_goroutine();
-
-        // Only create new
-        bpf_map_update_elem(&sc_map, &go_id, &logEvent.sc, 0);
-    }
+    logEvent.sc = generate_span_context();
 
     // add to perf map
     // BPF_F_CURRENT_CPU flaf option ?
@@ -175,10 +151,5 @@ int uprobe_Logrus_EntryWrite_Returns(struct pt_regs *ctx) {
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));
     bpf_map_delete_elem(&log_events, &key);
     stop_tracking_span(&tmpReq.sc);
-
-    if (tmpReq.trace_root > 0) {
-        delete_sc();
-    }
-
     return 0;
 }

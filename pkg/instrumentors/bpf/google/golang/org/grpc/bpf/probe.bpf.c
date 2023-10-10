@@ -109,9 +109,6 @@ int uprobe_ClientConn_Invoke(struct pt_regs *ctx)
     target_size = target_size < target_len ? target_size : target_len;
     bpf_probe_read(&grpcReq.target, target_size, target_ptr);
 
-    // Get parent if exists
-    void *sc_ptr = get_sc(); // Search for active sc in current goroutine
-
     void *context_ptr = get_argument(ctx, context_pos);
     void *context_ptr_val = 0;
     bpf_probe_read(&context_ptr_val, sizeof(context_ptr_val), context_ptr);
@@ -124,32 +121,7 @@ int uprobe_ClientConn_Invoke(struct pt_regs *ctx)
     }
     else
     {
-        if (sc_ptr != NULL) { // sc exists in current goroutine
-            bpf_probe_read(&grpcReq.psc, sizeof(grpcReq.psc), sc_ptr);
-            copy_byte_arrays(grpcReq.psc.TraceID, grpcReq.sc.TraceID, TRACE_ID_SIZE);
-            generate_random_bytes(grpcReq.sc.SpanID, SPAN_ID_SIZE);
-        } else { // sc not exist. Create and set current as new gorotine
-            grpcReq.sc = generate_span_context();
-        }
-    }
-
-    // context of not exists
-    if (sc_ptr == NULL) {
-        grpcReq.trace_root = 1;
-        // Set kv for sc span
-        u64 go_id = get_current_goroutine();
-
-        // Only create new
-        u32 status = bpf_map_update_elem(&sc_map, &go_id, &grpcReq.sc, 0);
-
-        if (status == 0) {
-            bpf_printk("grpc - create correlation success go_id %d", go_id);
-
-            void *new_sc_ptr = get_sc();
-            bpf_printk("grpc - After create, test exist goid %d - result %d", go_id, (new_sc_ptr == NULL) ? 0 : 1);
-        } else {
-            bpf_printk("grpc - create correlation fail go_id %d", go_id);
-        }
+        grpcReq.sc = generate_span_context();
     }
 
     // Get key

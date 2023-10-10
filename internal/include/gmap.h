@@ -1,6 +1,6 @@
 #include "bpf_helpers.h"
 
-#define MAX_SIZE 30
+#define MAX_SIZE 1024
 #define GOPC_PGOID 1
 #define CURTHREAD_GOID 2
 #define CURTHREAD_GOPC 3

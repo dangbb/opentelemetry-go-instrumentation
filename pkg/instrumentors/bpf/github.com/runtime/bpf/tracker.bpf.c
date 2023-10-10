@@ -55,9 +55,6 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
 
     // creating
     if (newval == 1 && oldval == 6) {
-        // get value of parent goroutine by access newproc1's second argument
-        bpf_map_update_elem(&gopc_to_pgoid, &gopc, &cur_goid, 0);
-
         // send type 1 event
         struct gmap_t event1 = {};
 
@@ -73,16 +70,6 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
     // running
     if (newval == 2) {
         bpf_map_update_elem(&goroutines_map, &current_thread, &goid, 0);
-
-        void* pgoid_ptr = bpf_map_lookup_elem(&gopc_to_pgoid, &gopc);
-        if (pgoid_ptr == NULL) {
-            return 0;
-        }
-
-        u64 pgoid = 0;
-        bpf_probe_read(&pgoid, sizeof(pgoid), pgoid_ptr);
-        bpf_map_delete_elem(&gopc_to_pgoid, &gopc);
-        bpf_map_update_elem(&p_goroutines_map, &goid, &pgoid, 0);
 
         // send type 2 event
         struct gmap_t event2 = {};
@@ -104,16 +91,6 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
         bpf_printk("Type 3, cur thread %d - gopc %d", current_thread, gopc);
 
-        return 0;
-    }
-
-    // removing
-    if (newval == 6) {
-        // remove mapping between current goid and pgoid
-        bpf_map_delete_elem(&goroutines_map, &current_thread);
-
-        // skip delete goid parent
-        bpf_map_delete_elem(&p_goroutines_map, &goid);
         return 0;
     }
 
