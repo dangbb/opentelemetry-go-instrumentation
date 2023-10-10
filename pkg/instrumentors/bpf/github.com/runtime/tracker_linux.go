@@ -1,14 +1,21 @@
 package runtime
 
 import (
+	"bytes"
+	"encoding/binary"
+	"errors"
+	"fmt"
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
+	"github.com/cilium/ebpf/perf"
 	"go.opentelemetry.io/auto/pkg/inject"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpffs"
 	"go.opentelemetry.io/auto/pkg/instrumentors/context"
 	"go.opentelemetry.io/auto/pkg/instrumentors/events"
+	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"go.opentelemetry.io/auto/pkg/instrumentors/utils"
 	"go.opentelemetry.io/auto/pkg/log"
+	"os"
 )
 
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target amd64,arm64 -cc clang -cflags $CFLAGS bpf ./bpf/tracker.bpf.c
@@ -18,9 +25,17 @@ const (
 	instrumentorName = "runtime-instrumentor"
 )
 
+type GmapEvent struct {
+	Key   uint64
+	Value uint64
+	Sc    context.EBPFSpanContext
+	Type  uint64
+}
+
 type Instrumentor struct {
-	bpfObjects *bpfObjects
-	uprobes    []link.Link
+	bpfObjects   *bpfObjects
+	uprobes      []link.Link
+	eventsReader *perf.Reader
 }
 
 // New returns a new [Instrumentor].
@@ -63,6 +78,12 @@ func (i *Instrumentor) Load(ctx *context.InstrumentorContext) error {
 		i.registerProbes(ctx, funcName)
 	}
 
+	rd, err := perf.NewReader(i.bpfObjects.GmapEvents, os.Getpagesize())
+	if err != nil {
+		return err
+	}
+	i.eventsReader = rd
+
 	return nil
 }
 
@@ -96,7 +117,56 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 	i.uprobes = append(i.uprobes, up)
 }
 
-func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {}
+func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
+	logger := log.Logger.WithName("net/http-instrumentor")
+	var event GmapEvent
+	for {
+		record, err := i.eventsReader.Read()
+		if err != nil {
+			if errors.Is(err, perf.ErrClosed) {
+				return
+			}
+			logger.Error(err, "error reading from perf reader")
+			continue
+		}
+
+		if record.LostSamples != 0 {
+			logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
+			continue
+		}
+
+		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+			logger.Error(err, "error parsing perf event")
+			continue
+		}
+
+		logger.Info(fmt.Sprintf("Get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s",
+			event.Type,
+			event.Key,
+			event.Value,
+			event.Sc.TraceID.String(),
+			event.Sc.SpanID.String()))
+
+		switch event.Type {
+		case 1: // TODO using const to store these
+			gmap.SetGoPc2GoId(event.Key, event.Type)
+		case 2: // TODO using const to store these
+			gmap.SetCurThread2GoId(event.Key, event.Type)
+		case 3: // TODO using const to store these
+			goid, ok := gmap.GetCurThread2GoId(event.Key)
+			if !ok {
+				logger.Info("Not found goid for thread %d", event.Key)
+				continue
+			}
+			pgoid, ok := gmap.GetGoPc2GoId(event.Key)
+			if !ok {
+				logger.Info("Not found p goid for gopc %d", event.Key)
+				continue
+			}
+			gmap.SetGoId2PGoId(goid, pgoid)
+		}
+	}
+}
 
 func (i *Instrumentor) Close() {
 	log.Logger.V(0).Info("closing runtime tracking")
@@ -106,5 +176,9 @@ func (i *Instrumentor) Close() {
 
 	if i.bpfObjects != nil {
 		i.bpfObjects.Close()
+	}
+
+	if i.eventsReader != nil {
+		i.eventsReader.Close()
 	}
 }

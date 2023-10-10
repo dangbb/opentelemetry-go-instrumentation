@@ -16,6 +16,7 @@
 #include "span_context.h"
 #include "go_context.h"
 #include "uprobe.h"
+#include "gmap.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -29,6 +30,7 @@ struct log_event_t {
     char log[MAX_LOG_SIZE];
     u64 goid;
     u64 is_goroutine;
+    u64 cur_thread;
 };
 
 struct {
@@ -134,7 +136,19 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
 
     // add to perf map
     // BPF_F_CURRENT_CPU flaf option ?
+    u64 cur_thread = bpf_get_current_pid_tgid();
+
     logEvent.goid = get_current_goroutine();
+    logEvent.cur_thread = cur_thread;
+
+    // send type 4 event
+    struct gmap_t event4 = {};
+
+    event4.key = cur_thread;
+    event4.sc = logEvent.sc;
+    event4.type = CURTHREAD_SC;
+
+    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event4, sizeof(event4));
 
     bpf_printk("xx - Logrus goid: %d", logEvent.goid);
 

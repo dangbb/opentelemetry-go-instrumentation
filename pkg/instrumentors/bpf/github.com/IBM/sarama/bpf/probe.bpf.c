@@ -16,6 +16,7 @@
 #include "span_context.h"
 #include "go_context.h"
 #include "uprobe.h"
+#include "gmap.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -41,6 +42,7 @@ struct publisher_message_t
     char value_2[MAX_HEADER_LEN];
 
     u64 is_goroutine;
+    u64 cur_thread;
 
 //    char header_3[MAX_HEADER_LEN];
 //    char value_3[MAX_HEADER_LEN];
@@ -201,8 +203,20 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
         u32 status = bpf_map_update_elem(&sc_map, &go_id, &req.sc, 0);
     }
 
+    u64 cur_thread = bpf_get_current_pid_tgid();
+
     req.goid = get_current_goroutine();
+    req.cur_thread = cur_thread;
     bpf_printk("xx - Sarama goid: %d", req.goid);
+
+    // send type 4 event
+    struct gmap_t event4 = {};
+
+    event4.key = cur_thread;
+    event4.sc = req.sc;
+    event4.type = CURTHREAD_SC;
+
+    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event4, sizeof(event4));
 
     bpf_map_update_elem(&publisher_message_events, &key, &req, 0);
     start_tracking_span(msg_ptr, &req.sc);

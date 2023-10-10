@@ -14,6 +14,7 @@
 
 #include "arguments.h"
 #include "goroutines.h"
+#include "gmap.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -57,6 +58,15 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         // get value of parent goroutine by access newproc1's second argument
         bpf_map_update_elem(&gopc_to_pgoid, &gopc, &cur_goid, 0);
 
+        // send type 1 event
+        struct gmap_t event1 = {};
+
+        event1.key = gopc;
+        event1.value = cur_goid;
+        event1.type = GOPC_PGOID;
+
+        bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event1, sizeof(event1));
+
         return 0;
     }
 
@@ -76,6 +86,24 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         bpf_map_update_elem(&p_goroutines_map, &goid, &pgoid, 0);
 
         bpf_printk("Create new edge: %d -> %d", goid, pgoid);
+
+        // send type 2 event
+        struct gmap_t event2 = {};
+
+        event2.key = current_thread;
+        event2.value = goid;
+        event2.type = CURTHREAD_GOID;
+
+        bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event2, sizeof(event2));
+
+        // send type 3 event
+        struct gmap_t event3 = {};
+
+        event3.key = current_thread;
+        event3.value = gopc;
+        event3.type = CURTHREAD_GOPC;
+
+        bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 
         return 0;
     }

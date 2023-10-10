@@ -12,6 +12,13 @@ import (
 	"github.com/cilium/ebpf"
 )
 
+type bpfGmapT struct {
+	Key   uint64
+	Value uint64
+	Sc    bpfSpanContext
+	Type  uint64
+}
+
 type bpfPublisherMessageT struct {
 	StartTime   uint64
 	EndTime     uint64
@@ -29,6 +36,7 @@ type bpfPublisherMessageT struct {
 	Value2      [25]int8
 	_           [4]byte
 	IsGoroutine uint64
+	CurThread   uint64
 }
 
 type bpfSpanContext struct {
@@ -86,9 +94,11 @@ type bpfProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
 	Events                 *ebpf.MapSpec `ebpf:"events"`
+	GmapEvents             *ebpf.MapSpec `ebpf:"gmap_events"`
 	GopcToPgoid            *ebpf.MapSpec `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap          *ebpf.MapSpec `ebpf:"goroutines_map"`
 	P_goroutinesMap        *ebpf.MapSpec `ebpf:"p_goroutines_map"`
+	PlaceholderMap         *ebpf.MapSpec `ebpf:"placeholder_map"`
 	PublisherMessageEvents *ebpf.MapSpec `ebpf:"publisher_message_events"`
 	ScMap                  *ebpf.MapSpec `ebpf:"sc_map"`
 	TrackedSpans           *ebpf.MapSpec `ebpf:"tracked_spans"`
@@ -115,9 +125,11 @@ func (o *bpfObjects) Close() error {
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
 	Events                 *ebpf.Map `ebpf:"events"`
+	GmapEvents             *ebpf.Map `ebpf:"gmap_events"`
 	GopcToPgoid            *ebpf.Map `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap          *ebpf.Map `ebpf:"goroutines_map"`
 	P_goroutinesMap        *ebpf.Map `ebpf:"p_goroutines_map"`
+	PlaceholderMap         *ebpf.Map `ebpf:"placeholder_map"`
 	PublisherMessageEvents *ebpf.Map `ebpf:"publisher_message_events"`
 	ScMap                  *ebpf.Map `ebpf:"sc_map"`
 	TrackedSpans           *ebpf.Map `ebpf:"tracked_spans"`
@@ -127,9 +139,11 @@ type bpfMaps struct {
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.Events,
+		m.GmapEvents,
 		m.GopcToPgoid,
 		m.GoroutinesMap,
 		m.P_goroutinesMap,
+		m.PlaceholderMap,
 		m.PublisherMessageEvents,
 		m.ScMap,
 		m.TrackedSpans,

@@ -12,6 +12,13 @@ import (
 	"github.com/cilium/ebpf"
 )
 
+type bpfGmapT struct {
+	Key   uint64
+	Value uint64
+	Sc    bpfSpanContext
+	Type  uint64
+}
+
 type bpfHttpRequestT struct {
 	StartTime uint64
 	EndTime   uint64
@@ -22,6 +29,7 @@ type bpfHttpRequestT struct {
 	Path      [100]int8
 	_         [5]byte
 	Goid      uint64
+	CurThread uint64
 }
 
 type bpfSpanContext struct {
@@ -80,12 +88,14 @@ type bpfProgramSpecs struct {
 type bpfMapSpecs struct {
 	AllocMap                    *ebpf.MapSpec `ebpf:"alloc_map"`
 	Events                      *ebpf.MapSpec `ebpf:"events"`
+	GmapEvents                  *ebpf.MapSpec `ebpf:"gmap_events"`
 	GolangMapbucketStorageMap   *ebpf.MapSpec `ebpf:"golang_mapbucket_storage_map"`
 	GopcToPgoid                 *ebpf.MapSpec `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap               *ebpf.MapSpec `ebpf:"goroutines_map"`
 	HttpEvents                  *ebpf.MapSpec `ebpf:"http_events"`
 	P_goroutinesMap             *ebpf.MapSpec `ebpf:"p_goroutines_map"`
 	ParentSpanContextStorageMap *ebpf.MapSpec `ebpf:"parent_span_context_storage_map"`
+	PlaceholderMap              *ebpf.MapSpec `ebpf:"placeholder_map"`
 	ScMap                       *ebpf.MapSpec `ebpf:"sc_map"`
 	TrackedSpans                *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc            *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
@@ -112,12 +122,14 @@ func (o *bpfObjects) Close() error {
 type bpfMaps struct {
 	AllocMap                    *ebpf.Map `ebpf:"alloc_map"`
 	Events                      *ebpf.Map `ebpf:"events"`
+	GmapEvents                  *ebpf.Map `ebpf:"gmap_events"`
 	GolangMapbucketStorageMap   *ebpf.Map `ebpf:"golang_mapbucket_storage_map"`
 	GopcToPgoid                 *ebpf.Map `ebpf:"gopc_to_pgoid"`
 	GoroutinesMap               *ebpf.Map `ebpf:"goroutines_map"`
 	HttpEvents                  *ebpf.Map `ebpf:"http_events"`
 	P_goroutinesMap             *ebpf.Map `ebpf:"p_goroutines_map"`
 	ParentSpanContextStorageMap *ebpf.Map `ebpf:"parent_span_context_storage_map"`
+	PlaceholderMap              *ebpf.Map `ebpf:"placeholder_map"`
 	ScMap                       *ebpf.Map `ebpf:"sc_map"`
 	TrackedSpans                *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc            *ebpf.Map `ebpf:"tracked_spans_by_sc"`
@@ -127,12 +139,14 @@ func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.AllocMap,
 		m.Events,
+		m.GmapEvents,
 		m.GolangMapbucketStorageMap,
 		m.GopcToPgoid,
 		m.GoroutinesMap,
 		m.HttpEvents,
 		m.P_goroutinesMap,
 		m.ParentSpanContextStorageMap,
+		m.PlaceholderMap,
 		m.ScMap,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,

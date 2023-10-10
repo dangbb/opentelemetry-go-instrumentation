@@ -24,7 +24,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
+	"golang.org/x/xerrors"
 	"os"
+	"sync"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
@@ -49,19 +52,28 @@ const (
 	instrumentorName = "sirupsen/logrus-instrumentor"
 )
 
+type GMapEvent struct {
+	Key   uint64
+	Value uint64
+	Sc    context.EBPFSpanContext
+	Type  uint64
+}
+
 type Event struct {
 	context.BaseSpanProperties
-	Level uint64
-	Log   [100]byte
-	_     [4]byte
-	Goid  uint64
+	Level     uint64
+	Log       [100]byte
+	_         [4]byte
+	Goid      uint64
+	CurThread uint64
 }
 
 type Instrumentor struct {
-	bpfObjects   *bpfObjects
-	uprobes      []link.Link
-	returnProbes []link.Link
-	eventsReader *perf.Reader
+	bpfObjects      *bpfObjects
+	uprobes         []link.Link
+	returnProbes    []link.Link
+	eventsReader    *perf.Reader
+	gmapEventReader *perf.Reader
 }
 
 // New returns a new [Instrumentor].
@@ -114,6 +126,12 @@ func (i *Instrumentor) Load(ctx *context.InstrumentorContext) error {
 	}
 	i.eventsReader = rd
 
+	gmrd, err := perf.NewReader(i.bpfObjects.GmapEvents, os.Getpagesize())
+	if err != nil {
+		return err
+	}
+	i.gmapEventReader = gmrd
+
 	return nil
 }
 
@@ -156,32 +174,114 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 
 func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	logger := log.Logger.WithName(instrumentorName)
-	var event Event
+	wg := sync.WaitGroup{}
+	wg.Add(2)
 
-	for {
-		record, err := i.eventsReader.Read()
-		if err != nil {
-			if errors.Is(err, perf.ErrClosed) {
-				logger.Info("[DEBUG] - Perf channel closed.")
-				return
+	go func() {
+		var event Event
+
+		for {
+			record, err := i.eventsReader.Read()
+			if err != nil {
+				if errors.Is(err, perf.ErrClosed) {
+					logger.Info("[DEBUG] - Perf channel closed.")
+					return
+				}
+				logger.Error(err, "error reading from perf reader")
+				// Add metric to count error from perf reader
+				continue
 			}
-			logger.Error(err, "error reading from perf reader")
-			// Add metric to count error from perf reader
-			continue
-		}
 
-		if record.LostSamples != 0 {
-			logger.V(0).Info("perf event rung buffer full", "dropped", record.LostSamples)
-			continue
-		}
+			if record.LostSamples != 0 {
+				logger.V(0).Info("perf event rung buffer full", "dropped", record.LostSamples)
+				continue
+			}
 
-		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-			logger.Error(err, "error parsing perf event")
-			continue
-		}
+			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+				logger.Error(err, "error parsing perf event")
+				continue
+			}
 
-		eventsChan <- i.convertEvent(&event)
-	}
+			goid, ok := gmap.GetCurThread2GoId(event.CurThread)
+			if !ok {
+				logger.Info("Not found goroutine id for thread: %d", event.CurThread)
+				continue
+			}
+
+			sc, ok := gmap.GetGoId2Sc(goid)
+			if ok {
+				event.SpanContext.TraceID = sc.TraceID
+			}
+
+			psc, ok := gmap.GetAncestorSc(goid)
+			if !ok {
+				gmap.SetGoId2Sc(goid, event.SpanContext)
+			} else {
+				event.SpanContext.TraceID = psc.TraceID
+			}
+
+			eventsChan <- i.convertEvent(&event)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		var event GMapEvent
+		for {
+			record, err := i.gmapEventReader.Read()
+			if err != nil {
+				if errors.Is(err, perf.ErrClosed) {
+					return
+				}
+				logger.Error(err, "error reading from perf reader")
+				continue
+			}
+
+			if record.LostSamples != 0 {
+				logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
+				continue
+			}
+
+			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+				logger.Error(err, "error parsing perf event")
+				continue
+			}
+
+			logger.Info(fmt.Sprintf("net/http - Get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s",
+				event.Type,
+				event.Key,
+				event.Value,
+				event.Sc.TraceID.String(),
+				event.Sc.SpanID.String()))
+
+			if event.Type != 4 {
+				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not CURTHREAD_SC")
+				continue
+			}
+
+			goid, ok := gmap.GetCurThread2GoId(event.Key)
+			if !ok {
+				logger.Info("Goroutine id for thread %d not found", event.Key)
+				continue
+			}
+
+			// if goroutine id already taken, then skip
+			sc, ok := gmap.GetGoId2Sc(goid)
+			if ok {
+				event.Sc.TraceID = sc.TraceID
+				continue
+			}
+
+			psc, ok := gmap.GetAncestorSc(goid)
+			if ok {
+				event.Sc.TraceID = psc.TraceID
+			}
+
+			gmap.SetGoId2Sc(goid, event.Sc)
+		}
+	}()
+
+	wg.Wait()
 }
 
 func convertLevel(level uint64) string {
