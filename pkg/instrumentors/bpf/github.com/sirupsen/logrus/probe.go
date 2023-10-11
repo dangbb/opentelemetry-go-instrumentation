@@ -24,18 +24,17 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
-	"golang.org/x/xerrors"
-	"os"
-	"sync"
-
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/perf"
 	logrus_lib "github.com/sirupsen/logrus"
+	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sys/unix"
+	"golang.org/x/xerrors"
+	"os"
+	"sync"
 
 	"go.opentelemetry.io/auto/pkg/inject"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpffs"
@@ -209,11 +208,7 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				event.CurThread,
 				event.Goid)
 
-			goid, ok := gmap.GetCurThread2GoId(event.CurThread)
-			if !ok {
-				logger.Info(fmt.Sprintf("Not found goroutine id for thread: %d", event.CurThread))
-				continue
-			}
+			goid := event.Goid
 
 			sc, ok := gmap.GetGoId2Sc(goid)
 			if ok { // same goroutine sc exist
@@ -265,16 +260,12 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				event.Sc.TraceID.String(),
 				event.Sc.SpanID.String())
 
-			if event.Type != 4 {
-				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not CURTHREAD_SC")
+			if event.Type != gmap.GoId2Sc {
+				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")
 				continue
 			}
 
-			goid, ok := gmap.GetCurThread2GoId(event.Key)
-			if !ok {
-				fmt.Printf("logrus Goroutine id for thread %d not found\n", event.Key)
-				continue
-			}
+			goid := event.Key
 
 			// if goroutine id already taken, then skip
 			sc, ok := gmap.GetGoId2Sc(goid)

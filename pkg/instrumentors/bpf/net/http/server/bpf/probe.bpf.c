@@ -225,16 +225,15 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
     httpReq.goid = get_current_goroutine();
     httpReq.cur_thread = cur_thread;
 
-    // send type 4 event
-    struct gmap_t event4 = {};
+    // send type 3 event
+    struct gmap_t event3 = {};
 
-    event4.key = cur_thread;
-    event4.sc = httpReq.sc;
-    event4.type = CURTHREAD_SC;
+    event3.key = httpReq.goid;
+    event3.sc = httpReq.sc;
+    event3.type = GOID_SC;
 
-    bpf_printk("Type 4, server thread %d - goid %d", cur_thread, httpReq.goid);
-
-    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event4, sizeof(event4));
+    bpf_printk("Type 3, server goid %d", httpReq.goid);
+    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 
     bpf_map_update_elem(&http_events, &key, &httpReq, 0);
     start_tracking_span(req_ctx_ptr, &httpReq.sc);

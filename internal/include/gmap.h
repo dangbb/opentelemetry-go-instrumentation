@@ -2,9 +2,8 @@
 
 #define MAX_SIZE 1024
 #define GOPC_PGOID 1
-#define CURTHREAD_GOID 2
-#define CURTHREAD_GOPC 3
-#define CURTHREAD_SC 4
+#define GOID_GOPC 2
+#define GOID_SC 3
 
 struct gmap_t {
     u64 key;

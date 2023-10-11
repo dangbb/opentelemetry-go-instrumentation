@@ -117,16 +117,15 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
     logEvent.goid = get_current_goroutine();
     logEvent.cur_thread = cur_thread;
 
-    // send type 4 event
-    struct gmap_t event4 = {};
+    // send type 3 event
+    struct gmap_t event3 = {};
 
-    event4.key = cur_thread;
-    event4.sc = logEvent.sc;
-    event4.type = CURTHREAD_SC;
+    event3.key = logEvent.goid;
+    event3.sc = logEvent.sc;
+    event3.type = GOID_SC;
 
-    bpf_printk("Type 4, logrus thread %d - goid %d", cur_thread, logEvent.goid);
-
-    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event4, sizeof(event4));
+    bpf_printk("Type 3, logrus goid %d", logEvent.goid);
+    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 
     void *key = get_consistent_key(ctx, entry_ptr);
     bpf_map_update_elem(&log_events, &key, &logEvent, 0);

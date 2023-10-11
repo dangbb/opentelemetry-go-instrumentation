@@ -230,11 +230,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				event.CurThread,
 				event.Goid)
 
-			goid, ok := gmap.GetCurThread2GoId(event.CurThread)
-			if !ok {
-				logger.Info(fmt.Sprintf("Not found goroutine id for thread: %d", event.CurThread))
-				continue
-			}
+			goid := event.Goid
 
 			sc, ok := gmap.GetGoId2Sc(goid)
 			if ok {
@@ -286,16 +282,12 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				event.Sc.TraceID.String(),
 				event.Sc.SpanID.String())
 
-			if event.Type != 4 {
-				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not CURTHREAD_SC")
+			if event.Type != gmap.GoId2Sc {
+				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")
 				continue
 			}
 
-			goid, ok := gmap.GetCurThread2GoId(event.Key)
-			if !ok {
-				fmt.Printf("Server Goroutine id for thread %d not found\n", event.Key)
-				continue
-			}
+			goid := event.Key
 
 			// if goroutine id already taken, then skip
 			sc, ok := gmap.GetGoId2Sc(goid)

@@ -74,24 +74,12 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         // send type 2 event
         struct gmap_t event2 = {};
 
-        event2.key = current_thread;
-        event2.value = goid;
-        event2.type = CURTHREAD_GOID;
+        event2.key = goid;
+        event2.value = gopc;
+        event2.type = GOID_GOPC;
 
         bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event2, sizeof(event2));
         bpf_printk("Type 2, cur thread %d - goid %d", current_thread, goid);
-
-        // send type 3 event
-        struct gmap_t event3 = {};
-
-        event3.key = current_thread;
-        event3.value = gopc;
-        event3.type = CURTHREAD_GOPC;
-
-        bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
-        bpf_printk("Type 3, cur thread %d - gopc %d", current_thread, gopc);
-
-        return 0;
     }
 
     return 0;

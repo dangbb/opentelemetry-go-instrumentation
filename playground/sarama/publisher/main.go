@@ -91,23 +91,30 @@ func computeE(iterations int64) float64 {
 
 	go func() {
 		defer wg.Done()
-		go sendKafka("1")
+		sendKafka("1")
 	}()
 	//// check if 2 different function produce same consistent key
 	go func() {
 		defer wg.Done()
-		go sendKafka("2")
+		sendKafka("2")
 	}()
 
 	go func() {
 		defer wg.Done()
-		go sendKafka("3")
+		sendKafka("3")
 	}()
 
 	wg.Wait()
 
 	// test library sirupsen/logrus
 	go logLogrus()
+
+	logrus.SetLevel(logrus.DebugLevel)
+
+	logrus.Trace("Same goroutine")
+	logrus.Debug("Same goroutine")
+	logrus.Info("Same goroutine")
+	logrus.Warn("Same goroutine")
 
 	return res
 }

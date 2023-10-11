@@ -1,8 +1,7 @@
 #include "bpf_helpers.h"
 #include "span_context.h"
 
-#define MAX_SYSTEM_THREADS 30
-#define MAX_DEPTH 16
+#define MAX_SYSTEM_THREADS 128
 
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
