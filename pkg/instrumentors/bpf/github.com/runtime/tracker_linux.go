@@ -149,22 +149,22 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 		switch event.Type {
 		case 1: // TODO using const to store these
-			gmap.SetGoPc2GoId(event.Key, event.Type)
+			gmap.SetGoPc2GoId(event.Key, event.Value)
 		case 2: // TODO using const to store these
-			gmap.SetCurThread2GoId(event.Key, event.Type)
+			gmap.SetCurThread2GoId(event.Key, event.Value)
 		case 3: // TODO using const to store these
 			goid, ok := gmap.GetCurThread2GoId(event.Key)
 			if !ok {
 				logger.Info(fmt.Sprintf("Not found goid for thread %d", event.Key))
 				continue
 			}
-			pgoid, ok := gmap.GetGoPc2GoId(event.Key)
+			pgoid, ok := gmap.GetGoPc2GoId(event.Value)
 			if !ok {
-				logger.Info(fmt.Sprintf("Not found p goid for gopc %d", event.Key))
+				logger.Info(fmt.Sprintf("Not found p goid for gopc %d", event.Value))
 				continue
 			}
 			gmap.SetGoId2PGoId(goid, pgoid)
-			logger.Info("[DEBUG] - Create edge: %d -> %d\n", goid, pgoid)
+			fmt.Printf("[DEBUG] - Create edge: %d -> %d\n", goid, pgoid)
 		}
 	}
 }

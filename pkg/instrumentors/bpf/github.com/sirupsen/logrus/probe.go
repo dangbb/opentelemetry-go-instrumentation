@@ -61,11 +61,12 @@ type GMapEvent struct {
 
 type Event struct {
 	context.BaseSpanProperties
-	Level     uint64
-	Log       [100]byte
-	_         [4]byte
-	Goid      uint64
-	CurThread uint64
+	Level       uint64
+	Log         [100]byte
+	_           [4]byte
+	Goid        uint64
+	IsGoroutine uint64
+	CurThread   uint64
 }
 
 type Instrumentor struct {
@@ -202,6 +203,8 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
+			fmt.Printf("[MAIN] - logrus - traceId: %s - spanId: %s\n", event.SpanContext.TraceID, event.SpanContext.SpanID)
+
 			goid, ok := gmap.GetCurThread2GoId(event.CurThread)
 			if !ok {
 				logger.Info(fmt.Sprintf("Not found goroutine id for thread: %d", event.CurThread))
@@ -209,16 +212,22 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			}
 
 			sc, ok := gmap.GetGoId2Sc(goid)
-			if ok {
+			if ok { // same goroutine sc exist
 				event.SpanContext.TraceID = sc.TraceID
+				fmt.Printf("Logrus - sc for goid %d exist\n", goid)
+			} else {
+				psc, ok := gmap.GetAncestorSc(goid)
+				fmt.Printf("Logrus - get from ancestor for %d\n", goid)
+				if ok { // parent goroutine sc exist
+					event.ParentSpanContext = psc
+					event.SpanContext.TraceID = psc.TraceID
+					fmt.Printf("Logrus - ancestor exist. take value of ancestor. TraceID: %s - SpanID: %s\n",
+						psc.TraceID.String(),
+						psc.SpanID.String())
+				}
 			}
 
-			psc, ok := gmap.GetAncestorSc(goid)
-			if !ok {
-				gmap.SetGoId2Sc(goid, event.SpanContext)
-			} else {
-				event.SpanContext.TraceID = psc.TraceID
-			}
+			fmt.Printf("[MAIN] - logrus after - traceId: %s - spanId: %s\n", event.SpanContext.TraceID, event.SpanContext.SpanID)
 
 			eventsChan <- i.convertEvent(&event)
 		}
@@ -270,14 +279,15 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			if ok {
 				event.Sc.TraceID = sc.TraceID
 				continue
+			} else {
+				psc, ok := gmap.GetAncestorSc(goid)
+				if ok {
+					event.Sc.TraceID = psc.TraceID
+				} else {
+					gmap.SetGoId2Sc(goid, event.Sc)
+					fmt.Printf("Type 4 logrus set sc for %d\n", goid)
+				}
 			}
-
-			psc, ok := gmap.GetAncestorSc(goid)
-			if ok {
-				event.Sc.TraceID = psc.TraceID
-			}
-
-			gmap.SetGoId2Sc(goid, event.Sc)
 			logger.Info(fmt.Sprintf("[DEBUG] - Create map: %d - TraceID: %s - SpanID: %s\n",
 				goid,
 				event.Sc.TraceID.String(),
@@ -303,24 +313,30 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 		TraceFlags: trace.FlagsSampled,
 	})
 
-	log.Logger.V(0).Info(fmt.Sprintf("logrus: Value of default parent span, trace ID %s - span ID %s",
-		e.ParentSpanContext.TraceID,
-		e.ParentSpanContext.SpanID))
+	var psc *trace.SpanContext = nil
 
-	log.Logger.V(0).Info(fmt.Sprintf("logrus: Value of default span, trace ID %s - span ID %s",
-		e.SpanContext.TraceID,
-		e.SpanContext.SpanID))
+	if e.ParentSpanContext.TraceID.IsValid() {
+		// cross goroutine is considered to be remote
+		tmp := trace.NewSpanContext(trace.SpanContextConfig{
+			TraceID:    e.ParentSpanContext.TraceID,
+			SpanID:     e.ParentSpanContext.SpanID,
+			TraceFlags: trace.FlagsSampled,
+			Remote:     true,
+		})
+		psc = &tmp
+	}
 
 	msgKey := attribute.Key("message")
 	levelKey := attribute.Key("level")
 
 	return &events.Event{
-		Library:     i.LibraryName(),
-		Name:        fmt.Sprintf("Logrus level: %s", Level),
-		Kind:        trace.SpanKindServer,
-		StartTime:   int64(e.StartTime),
-		EndTime:     int64(e.EndTime),
-		SpanContext: &sc,
+		Library:           i.LibraryName(),
+		Name:              fmt.Sprintf("Logrus level: %s", Level),
+		Kind:              trace.SpanKindServer,
+		StartTime:         int64(e.StartTime),
+		EndTime:           int64(e.EndTime),
+		SpanContext:       &sc,
+		ParentSpanContext: psc,
 		Attributes: []attribute.KeyValue{
 			msgKey.String(Log),
 			levelKey.String(Level),
