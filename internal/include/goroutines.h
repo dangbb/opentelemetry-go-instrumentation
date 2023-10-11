@@ -4,6 +4,10 @@
 #define MAX_SYSTEM_THREADS 30
 #define MAX_DEPTH 16
 
+#define GOID_PGOID 1
+#define GOID_SC 2
+#define THREAD_GOID 3
+
 struct {
 	__uint(type, BPF_MAP_TYPE_HASH);
 	__type(key, u64);
@@ -38,6 +42,23 @@ struct {
 	__uint(max_entries, MAX_SYSTEM_THREADS);
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } sc_map SEC(".maps");
+
+// common map struct
+struct thread_goid_mapping_t
+{
+    u64 key;
+    u64 value;
+    span_context sc_value;
+    u64 type;
+}
+
+// event channel for mapping events
+struct {
+    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);
+} mapping_events SEC(".maps");
+
+
+const struct thread_goid_mapping_t *unused __attribute__((unused));
 
 
 u64 get_current_goroutine() {

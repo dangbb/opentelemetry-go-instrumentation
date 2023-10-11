@@ -180,6 +180,35 @@ For general performance analysis:
   - Determined pattern or trend (e.g, metric keeps increasing which is not good and might need some optimization).
 - ...
 
+### Inter-process linker
+
+Kiến trúc inter-goroutine trong backend.
+
+1. Sử dụng 1 map tạm để lưu trữ phần này. Max expire 5s. Max entries 200.
+2. Tạo 1 package, tên là gmap - goroutine mapper.
+
+n. Kiểm tra cơ chế tái sử dụng goroutine trong golang.// Không bị.
+
+Package sẽ thực hiện 2 chức năng chính:
+1. Mapping giữa current thread và goroutine id.
+   Thay đổi đầu tiên là ta sẽ gửi về một mapping giữa current thread và goroutine id trong golang. Với giả sử là goroutine id không được tái sử dụng.
+2. Các probe sẽ gửi lại cho golang backend một mapping giữa sc và current thread tương ứng. (Thay vì là goid, gửi lại current thread). Thông tin này sẽ được sử dụng để xây dựng graph và mapping giữa goid và current thread. Goid sau đó sẽ được sử dụng để xâp graph.
+3. Parent graph. Các thông tin này cũng được bắn về golang backend để xử lý. Gồm có goid và pgoid.
+4. Quản lý sc tương ứng với mỗi goid. Cho phép chạy về gốc của cây. Phần tử cha gần nhất sẽ được lựa chọn để làm parent goid và thay đổi giá trị của trace ID ở node con. Phần này chỉ trả về traceID để tham vấn. Các thông tin khác không thực hiện trả về.
+
+Các thay đổi trong bpf C code:
+1. tracker.bpf.c sẽ phải gửi lên cặp key <gopc, pgoid>. type = 1. Gửi trong quá trình start goroutine.
+2. tracker.bpf.c srunẽ phải gửi lên cặp key <cur_thread, goid>, type = 2. Gửi trong quá trình run goroutine.
+3. tracker.bpf.c sẽ phải gửi lên cặp key <cur_thread, gopc>, type = 3. Gửi trong quá trình run goroutine.
+4. probe.bpf.c sẽ phải gửi lên cặp key <cur_thread, sc>, type = 4. Gửi trong quá trình chạy uprobe, lúc start hàm.
+
+Ứng với mỗi key và type, các loại mapping tương ứng sẽ được thực hiện:
+1. Loại 1. Lưu trữ key <gopc, pgoid>
+2. Loại 2. Lưu trữ key <cur_thread, goid>
+3. Loại 3. <cur_thread, gopc>. Key này không cần lưu lại. Từ cur_thread lấy được goid tương ứng. Từ gopc lấy được pgoid tương ứng. Do đó ta sẽ có được và lưu lại key <goid, pgoid>. Thêm cạnh lên cây.
+4. Loại 4. <cur_thread, sc>. Từ cur_thread, lấy được goid. Ta được key <goid, sc>. Lưu lại key này. Luôn được gửi đi kể cả khi sc là sinh random.
+5. Loại n. Probe gửi lại cur_thread và psc. Trường hợp sc không tồn tại, thực hiện travel trên cây để lấy giá trị của parent sc.
+
 ### Working on improvement
 
 List of tasks: https://app.diagrams.net/#G1SlL7WR4KKabT_eNkqCcU4cSg3jpgSI-5 

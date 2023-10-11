@@ -57,12 +57,28 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         // get value of parent goroutine by access newproc1's second argument
         bpf_map_update_elem(&gopc_to_pgoid, &gopc, &cur_goid, 0);
 
+        // send to golang backend to handle
+        struct thread_goid_mapping_t event = {};
+
+        event.key = gopc;
+        event.value = cur_goid;
+
+        bpf_perf_event_output(ctx, &mapping_events, BPF_F_CURRENT_CPU, &event, sizeof(event));
+
         return 0;
     }
 
     // running
     if (newval == 2) {
         bpf_map_update_elem(&goroutines_map, &current_thread, &goid, 0);
+
+        // send to golang backend to handle
+        struct thread_goid_mapping_t event = {};
+
+        event.key = current_thread;
+        event.value = goid;
+
+        bpf_perf_event_output(ctx, &mapping_events, BPF_F_CURRENT_CPU, &event, sizeof(event));
 
         void* pgoid_ptr = bpf_map_lookup_elem(&gopc_to_pgoid, &gopc);
         if (pgoid_ptr == NULL) {
