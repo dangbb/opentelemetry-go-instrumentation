@@ -1,6 +1,7 @@
 package gmap
 
 import (
+	"fmt"
 	"sync"
 
 	"go.opentelemetry.io/auto/pkg/instrumentors/context"
@@ -47,6 +48,8 @@ func SetGoPc2GoId(key, value uint64) {
 	defer goPc2PGoIdLock.Unlock()
 
 	goPc2PGoId[key] = value
+
+	fmt.Printf("Map pc 2 pgoid %d to %d\n", key, value)
 }
 
 func GetGoPc2GoId(key uint64) (uint64, bool) {
@@ -60,6 +63,8 @@ func GetGoPc2GoId(key uint64) (uint64, bool) {
 func SetCurThread2GoId(key, value uint64) {
 	curThread2GoIdLock.Lock()
 	defer curThread2GoIdLock.Unlock()
+
+	fmt.Printf("Map thread %d to %d\n", key, value)
 
 	curThread2GoId[key] = value
 }

@@ -218,7 +218,11 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			fmt.Printf("[MAIN] - sarama - traceId: %s - spanId: %s\n", event.SpanContext.TraceID, event.SpanContext.SpanID)
+			fmt.Printf("Sararam write trace sc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+				event.SpanContext.TraceID.String(),
+				event.SpanContext.SpanID.String(),
+				event.CurThread,
+				event.Goid)
 
 			goid, ok := gmap.GetCurThread2GoId(event.CurThread)
 			if !ok {
@@ -241,8 +245,6 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 						psc.SpanID.String())
 				}
 			}
-
-			fmt.Printf("[MAIN] - sarama after - traceId: %s - spanId: %s\n", event.SpanContext.TraceID, event.SpanContext.SpanID)
 
 			eventsChan <- i.convertEvent(&event)
 		}
@@ -285,7 +287,7 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 			goid, ok := gmap.GetCurThread2GoId(event.Key)
 			if !ok {
-				logger.Info(fmt.Sprintf("Goroutine id for thread %d not found", event.Key))
+				fmt.Printf("logrus Goroutine id for thread %d not found\n", event.Key)
 				continue
 			}
 
@@ -293,17 +295,19 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			sc, ok := gmap.GetGoId2Sc(goid)
 			if ok {
 				event.Sc.TraceID = sc.TraceID
+				fmt.Printf("logrus sc for goid %d exist\n", goid)
 				continue
 			} else {
 				psc, ok := gmap.GetAncestorSc(goid)
 				if ok {
 					event.Sc.TraceID = psc.TraceID
+					fmt.Printf("logrus found ancestor for %d\n", goid)
 				} else {
 					gmap.SetGoId2Sc(goid, event.Sc)
 					fmt.Printf("Type 4 sarama set sc for %d\n", goid)
 				}
 			}
-			logger.Info(fmt.Sprintf("[DEBUG] - Create map: %d - TraceID: %s - SpanID: %s\n",
+			logger.Info(fmt.Sprintf("[DEBUG] - Sarama create map: %d - TraceID: %s - SpanID: %s\n",
 				goid,
 				event.Sc.TraceID.String(),
 				event.Sc.SpanID.String()))
