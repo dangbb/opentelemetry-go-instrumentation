@@ -1,0 +1,18 @@
+syntax="proto3";
+package proto;
+
+option go_package = "proto;pb";
+
+message AuditSendRequest {
+  string service_name = 1;
+  uint64 request_type = 2;
+}
+
+message AuditSendResponse {
+  uint64 code = 1;
+  string message = 2;
+}
+
+service AuditService {
+  rpc AuditSend(AuditSendRequest) returns (AuditSendResponse) {};
+}
