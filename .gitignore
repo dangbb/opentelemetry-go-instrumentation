@@ -31,3 +31,4 @@ test/**/traces-orig.json
 *.db
 vendor
 /playground/microservices/docker/volume/
+/playground/microservices/bin/

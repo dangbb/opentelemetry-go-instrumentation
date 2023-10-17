@@ -72,7 +72,7 @@ services:
       KAFKA_CLUSTERS_0_ZOOKEEPER: warehouse-zoo:2181
     depends_on:
       - warehouse-kafka
-      - schema-registry
+      - warehouse-schema-registry
     networks:
       - service-mesh
 
@@ -93,18 +93,149 @@ services:
       - service-mesh
 
   # main services
-  http-plus-db:
-    depends_on:
-      - jaeger
+  interceptor:
     build:
-      context: .
-      dockerfile: ./Dockerfile
+      context: ..
+      dockerfile: service/interceptor/.Dockerfile
+    command:
+      - server
     pid: "host"
     ports:
-      - "8080:8080"
+      - "8090:8090"
+    environment:
+      LOGGER_LEVEL: debug
+      HTTP_PORT: 8090
+      MYSQL_HOST: localhost
+      MYSQL_PORT: 3320
+      MYSQL_DBNAME: dbname
+      MYSQL_USERNAME: username
+      MYSQL_PASSWORD: password
+
+      KAFKA_BROKER: localhost:9092
+      KAFKA_TOPIC: warehouse
+
+      INTERCEPTOR_ADDRESS: localhost:8090
+      AUDIT_ADDRESS: localhost:8091
+      WAREHOUSE_ADDRESS: http://localhost:8092
+      CUSTOMER_ADDRESS: http://localhost:8093
     volumes:
-      - shared-data:/app
       - /proc:/host/proc
+
+  audit-service-migrate:
+    build:
+      context: ..
+      dockerfile: service/auditservice/.Dockerfile
+    command:
+      - migrate up
+    pid: "host"
+    ports:
+      - "8091:8091"
+    environment:
+      LOGGER_LEVEL: debug
+      GRPC_PORT: 8091
+      MYSQL_HOST: localhost
+      MYSQL_PORT: 3320
+      MYSQL_DBNAME: dbname
+      MYSQL_USERNAME: username
+      MYSQL_PASSWORD: password
+
+      KAFKA_BROKER: localhost:9092
+      KAFKA_TOPIC: warehouse
+
+      INTERCEPTOR_ADDRESS: localhost:8090
+      AUDIT_ADDRESS: localhost:8091
+      WAREHOUSE_ADDRESS: http://localhost:8092
+      CUSTOMER_ADDRESS: http://localhost:8093
+    volumes:
+      - /proc:/host/proc
+
+  audit-service:
+    depends_on:
+      audit-service-migrate:
+        condition: service_completed_successfully
+    build:
+      context: ..
+      dockerfile: service/auditservice/.Dockerfile
+    command:
+      - server
+    pid: "host"
+    ports:
+      - "8091:8091"
+    environment:
+      LOGGER_LEVEL: debug
+      GRPC_PORT: 8091
+      MYSQL_HOST: localhost
+      MYSQL_PORT: 3320
+      MYSQL_DBNAME: dbname
+      MYSQL_USERNAME: username
+      MYSQL_PASSWORD: password
+
+      KAFKA_BROKER: localhost:9092
+      KAFKA_TOPIC: warehouse
+
+      INTERCEPTOR_ADDRESS: localhost:8090
+      AUDIT_ADDRESS: localhost:8091
+      WAREHOUSE_ADDRESS: http://localhost:8092
+      CUSTOMER_ADDRESS: http://localhost:8093
+    volumes:
+      - /proc:/host/proc
+
+  warehouse:
+    build:
+      context: ..
+      dockerfile: service/warehouse/.Dockerfile
+    command:
+      - server
+    pid: "host"
+    ports:
+      - "8092:8092"
+    environment:
+      LOGGER_LEVEL: debug
+      HTTP_PORT: 8092
+      MYSQL_HOST: localhost
+      MYSQL_PORT: 3320
+      MYSQL_DBNAME: dbname
+      MYSQL_USERNAME: username
+      MYSQL_PASSWORD: password
+
+      KAFKA_BROKER: localhost:9092
+      KAFKA_TOPIC: warehouse
+
+      INTERCEPTOR_ADDRESS: localhost:8090
+      AUDIT_ADDRESS: localhost:8091
+      WAREHOUSE_ADDRESS: http://localhost:8092
+      CUSTOMER_ADDRESS: http://localhost:8093
+    volumes:
+      - /proc:/host/proc
+
+  customer:
+    build:
+      context: ..
+      dockerfile: service/customer/.Dockerfile
+    command:
+      - server
+    pid: "host"
+    ports:
+      - "8093:8093"
+    environment:
+      LOGGER_LEVEL: debug
+      HTTP_PORT: 8093
+      MYSQL_HOST: localhost
+      MYSQL_PORT: 3320
+      MYSQL_DBNAME: dbname
+      MYSQL_USERNAME: username
+      MYSQL_PASSWORD: password
+
+      KAFKA_BROKER: localhost:9092
+      KAFKA_TOPIC: warehouse
+
+      INTERCEPTOR_ADDRESS: localhost:8090
+      AUDIT_ADDRESS: localhost:8091
+      WAREHOUSE_ADDRESS: http://localhost:8092
+      CUSTOMER_ADDRESS: http://localhost:8093
+    volumes:
+      - /proc:/host/proc
+
 networks:
   service-mesh:
     driver: bridge
