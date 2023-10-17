@@ -3,6 +3,8 @@ version: '3.7'
 services:
   audit-mysql:
     image: mysql:8
+    container_name: audit-mysql
+    hostname: audit-mysql
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password --sql-mode=
     env_file:
       - .env
@@ -134,8 +136,8 @@ services:
     environment:
       LOGGER_LEVEL: debug
       GRPC_PORT: 8091
-      MYSQL_HOST: localhost
-      MYSQL_PORT: 3320
+      MYSQL_HOST: audit-mysql
+      MYSQL_PORT: 3306
       MYSQL_DBNAME: dbname
       MYSQL_USERNAME: username
       MYSQL_PASSWORD: password
@@ -165,8 +167,8 @@ services:
     environment:
       LOGGER_LEVEL: debug
       GRPC_PORT: 8091
-      MYSQL_HOST: localhost
-      MYSQL_PORT: 3320
+      MYSQL_HOST: audit-mysql
+      MYSQL_PORT: 3306
       MYSQL_DBNAME: dbname
       MYSQL_USERNAME: username
       MYSQL_PASSWORD: password
@@ -201,7 +203,7 @@ services:
       MYSQL_USERNAME: username
       MYSQL_PASSWORD: password
 
-      KAFKA_BROKER: localhost:9092
+      KAFKA_BROKER: warehouse-kafka:9092
       KAFKA_TOPIC: warehouse
 
       INTERCEPTOR_ADDRESS: localhost:8090
