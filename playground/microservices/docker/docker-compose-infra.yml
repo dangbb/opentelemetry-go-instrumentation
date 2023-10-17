@@ -126,7 +126,8 @@ services:
       context: ..
       dockerfile: service/auditservice/.Dockerfile
     command:
-      - migrate up
+      - migrate
+      - up
     pid: "host"
     ports:
       - "8091:8091"
@@ -181,6 +182,8 @@ services:
       - /proc:/host/proc
 
   warehouse:
+    depends_on:
+      - warehouse-kafka
     build:
       context: ..
       dockerfile: service/warehouse/.Dockerfile
