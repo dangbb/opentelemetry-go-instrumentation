@@ -1,6 +1,7 @@
 package migrate
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -87,7 +88,9 @@ func Up(dsn string, folder string) {
 	}
 	err = m.Up()
 	if err != nil {
-		logger.Fatalf("Error when migrate up, err %s", err.Error())
+		if !errors.Is(err, migrate.ErrNoChange) {
+			logger.Fatalf("Error when migrate up, err %s", err.Error())
+		}
 	}
 
 	logger.Info("Done migrate up")

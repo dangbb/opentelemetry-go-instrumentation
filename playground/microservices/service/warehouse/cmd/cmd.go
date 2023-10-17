@@ -33,7 +33,7 @@ type warehouse struct {
 
 func (s *warehouse) InsertWarehouseHandler(w http.ResponseWriter, r *http.Request) {
 	// extract request content and send to kafka
-	var object Warehouse
+	var object service.Warehouse
 	if err := json.NewDecoder(r.Body).Decode(&object); err != nil {
 		responseWithJson(w, http.StatusBadRequest, map[string]string{"message": "Invalid body"})
 		return
@@ -63,7 +63,7 @@ func (s *warehouse) InsertWarehouseHandler(w http.ResponseWriter, r *http.Reques
 		responseWithJson(w, http.StatusInternalServerError, map[string]string{"message": err.Error()})
 		return
 	}
-	logrus.Debugf("Value of partition %d , offset %d\n", partition, offset)
+	logrus.Info("Done send to kafka. Value of partition %d , offset %d\n", partition, offset)
 
 	// create audit record
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -82,6 +82,8 @@ func (s *warehouse) InsertWarehouseHandler(w http.ResponseWriter, r *http.Reques
 		responseWithJson(w, int(response.Code), map[string]string{"message": response.Message})
 		return
 	}
+
+	logrus.Info("Done send to audit")
 
 	responseWithJson(w, http.StatusOK, map[string]string{"message": "OK"})
 }
@@ -104,7 +106,7 @@ func newWarehouseService(config config.Config) (WarehouseService, error) {
 	producer, err := sarama.NewSyncProducer(brokers, cfg)
 
 	// craft grpc client instance
-	conn, err := grpc.Dial(config.GrpcEndpoint, grpc.WithTransportCredentials(
+	conn, err := grpc.Dial(config.AuditAddress, grpc.WithTransportCredentials(
 		insecure.NewCredentials()))
 	if err != nil {
 		logrus.Fatalf("can establish grpc client conn %s", err.Error())
@@ -119,11 +121,6 @@ func newWarehouseService(config config.Config) (WarehouseService, error) {
 	}, err
 }
 
-type Warehouse struct {
-	Location string
-	Name     string
-}
-
 func responseWithJson(writer http.ResponseWriter, status int, object interface{}) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
@@ -135,7 +132,7 @@ func responseWithJson(writer http.ResponseWriter, status int, object interface{}
 
 func main() {
 	cfg := config.Config{}
-	kong.Parse(cfg)
+	kong.Parse(&cfg)
 
 	service, err := newWarehouseService(cfg)
 	if err != nil {
@@ -146,5 +143,6 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/insert-warehouse", service.InsertWarehouseHandler).Methods(http.MethodPost)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%s", cfg.HttpPort), r))
+	logrus.Infof("Run warehouse server at: 0.0.0.0:%d", cfg.HttpPort)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort), r))
 }

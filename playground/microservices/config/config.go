@@ -27,7 +27,7 @@ func (m *MySqlConfig) GetDsn() string {
 }
 
 type Config struct {
-	Server struct{} `cmd:"" help:"Start an echo server"`
+	Server struct{} `cmd:"" help:"Start a server"`
 
 	Migrate struct {
 		Command string `arg:"" name:"command" enum:"up,down,force,create"`
@@ -44,8 +44,10 @@ type Config struct {
 	MySqlConfig MySqlConfig `kong:"embed,help:'MySQL Config'"`
 	KafkaConfig KafkaConfig `kong:"embed,help:'Kafka Config'"`
 
-	GrpcEndpoint  string `name:"grpc-endpoint" help:"GRPC endpoint" env:"GRPC_ENDPOINT"`
-	HttpsEndpoint string `name:"https-endpoint" help:"HTTPS endpoint" env:"HTTPS_ENDPOINT"`
+	InterceptorAddress string `name:"interceptor-address" help:"Address of interceptor" env:"INTERCEPTOR_ADDRESS"`
+	AuditAddress       string `name:"audit-address" help:"Address of audit" env:"AUDIT_ADDRESS"`
+	WarehouseAddress   string `name:"warehouse-address" help:"Address of warehouse" env:"WAREHOUSE_ADDRESS"`
+	CustomerAddress    string `name:"customer-address" help:"Address of customer" env:"CUSTOMER_ADDRESS"`
 
 	JeagerEndpoint     string `name:"jeager-endpoint" help:"Jeager endpoint" env:"JEAGER_ENDPOINT"`
 	PrometheusEndpoint string `name:"prometheus-endpoint" help:"Prometheus endpoint" env:"PROMETHEUS_ENDPOINT"`

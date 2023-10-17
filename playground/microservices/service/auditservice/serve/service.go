@@ -18,21 +18,24 @@ import (
 )
 
 type AuditServer struct {
-	pb.AuditServiceServer
+	pb.UnimplementedAuditServiceServer
 
 	db service.AuditService
 }
 
-func (s *AuditServer) SendAudit(ctx context.Context, in *pb.AuditSendRequest) (*pb.AuditSendResponse, error) {
-	logrus.Info(fmt.Sprintf("Receive audit"))
+func (s *AuditServer) AuditSend(ctx context.Context, in *pb.AuditSendRequest) (*pb.AuditSendResponse, error) {
+	logrus.Info("Receive audit")
 
 	// send to mysql
 	if err := s.db.CreateAudit(ctx, service.Audit{
 		ServiceName: in.ServiceName,
 		RequestType: service.EventType(in.RequestType),
 	}); err != nil {
+		logrus.Infof("Error when write audit %s", err.Error())
 		return nil, err
 	}
+
+	logrus.Info("Done stored audit")
 
 	return &pb.AuditSendResponse{
 		Code:    200,

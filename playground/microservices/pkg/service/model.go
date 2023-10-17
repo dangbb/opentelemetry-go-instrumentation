@@ -11,3 +11,8 @@ type Audit struct {
 	ServiceName string
 	RequestType EventType
 }
+
+type Warehouse struct {
+	Location string
+	Name     string
+}
