@@ -74,7 +74,7 @@ func main() {
 		}
 		// send to audit service
 		grpcResponse, err := auditService.AuditSend(context.Background(), &pb.AuditSendRequest{
-			ServiceName: "inteceptor",
+			ServiceName: "interceptor",
 			RequestType: uint64(service.InterceptorInput),
 		})
 		if err != nil {

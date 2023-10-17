@@ -91,6 +91,20 @@ services:
       - '${SCHEMA_REGISTRY_PORT}:8081'
     networks:
       - service-mesh
+
+  # main services
+  http-plus-db:
+    depends_on:
+      - jaeger
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    pid: "host"
+    ports:
+      - "8080:8080"
+    volumes:
+      - shared-data:/app
+      - /proc:/host/proc
 networks:
   service-mesh:
     driver: bridge
