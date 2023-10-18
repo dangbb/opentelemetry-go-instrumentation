@@ -12,6 +12,13 @@ import (
 	"github.com/cilium/ebpf"
 )
 
+type bpfGmapT struct {
+	Key   uint64
+	Value uint64
+	Sc    bpfSpanContext
+	Type  uint64
+}
+
 type bpfHttpRequestT struct {
 	StartTime uint64
 	EndTime   uint64
@@ -21,6 +28,8 @@ type bpfHttpRequestT struct {
 	Method    [7]int8
 	Path      [100]int8
 	_         [5]byte
+	Goid      uint64
+	CurThread uint64
 }
 
 type bpfSpanContext struct {
@@ -78,8 +87,10 @@ type bpfProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
 	Events           *ebpf.MapSpec `ebpf:"events"`
+	GmapEvents       *ebpf.MapSpec `ebpf:"gmap_events"`
 	GoroutinesMap    *ebpf.MapSpec `ebpf:"goroutines_map"`
 	HttpEvents       *ebpf.MapSpec `ebpf:"http_events"`
+	PlaceholderMap   *ebpf.MapSpec `ebpf:"placeholder_map"`
 	TrackedSpans     *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
 }
@@ -104,8 +115,10 @@ func (o *bpfObjects) Close() error {
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
 	Events           *ebpf.Map `ebpf:"events"`
+	GmapEvents       *ebpf.Map `ebpf:"gmap_events"`
 	GoroutinesMap    *ebpf.Map `ebpf:"goroutines_map"`
 	HttpEvents       *ebpf.Map `ebpf:"http_events"`
+	PlaceholderMap   *ebpf.Map `ebpf:"placeholder_map"`
 	TrackedSpans     *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc *ebpf.Map `ebpf:"tracked_spans_by_sc"`
 }
@@ -113,8 +126,10 @@ type bpfMaps struct {
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.Events,
+		m.GmapEvents,
 		m.GoroutinesMap,
 		m.HttpEvents,
+		m.PlaceholderMap,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,
 	)

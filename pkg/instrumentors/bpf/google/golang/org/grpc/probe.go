@@ -22,8 +22,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
+	"golang.org/x/xerrors"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/cilium/ebpf"
 
@@ -48,15 +52,26 @@ import (
 // Event represents an event in the gRPC client during a gRPC request.
 type Event struct {
 	context.BaseSpanProperties
-	Method [50]byte
-	Target [50]byte
+	Method    [50]byte
+	Target    [50]byte
+	_         [4]byte
+	Goid      uint64
+	CurThread uint64
+}
+
+type GMapEvent struct {
+	Key   uint64
+	Value uint64
+	Sc    context.EBPFSpanContext
+	Type  uint64
 }
 
 // Instrumentor is the gRPC client instrumentor.
 type Instrumentor struct {
-	bpfObjects   *bpfObjects
-	uprobes      []link.Link
-	eventsReader *perf.Reader
+	bpfObjects      *bpfObjects
+	uprobes         []link.Link
+	eventsReader    *perf.Reader
+	gmapEventReader *perf.Reader
 }
 
 // New returns a new [Instrumentor].
@@ -183,35 +198,134 @@ func (g *Instrumentor) Load(ctx *context.InstrumentorContext) error {
 		return err
 	}
 	g.eventsReader = rd
+
+	gmrd, err := perf.NewReader(g.bpfObjects.GmapEvents, os.Getpagesize())
+	if err != nil {
+		return err
+	}
+	g.gmapEventReader = gmrd
+
 	return nil
 }
 
 // Run runs the events processing loop.
 func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	logger := log.Logger.WithName("grpc-instrumentor")
-	var event Event
-	for {
-		record, err := g.eventsReader.Read()
-		if err != nil {
-			if errors.Is(err, perf.ErrClosed) {
-				return
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		var event Event
+		for {
+			record, err := g.eventsReader.Read()
+			if err != nil {
+				if errors.Is(err, perf.ErrClosed) {
+					return
+				}
+				logger.Error(err, "error reading from perf reader")
+				continue
 			}
-			logger.Error(err, "error reading from perf reader")
-			continue
-		}
 
-		if record.LostSamples != 0 {
-			logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
-			continue
-		}
+			if record.LostSamples != 0 {
+				logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
+				continue
+			}
 
-		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-			logger.Error(err, "error parsing perf event")
-			continue
-		}
+			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+				logger.Error(err, "error parsing perf event")
+				continue
+			}
 
-		eventsChan <- g.convertEvent(&event)
-	}
+			fmt.Printf("grpc client write trace sc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+				event.SpanContext.TraceID.String(),
+				event.SpanContext.SpanID.String(),
+				event.CurThread,
+				event.Goid)
+
+			goid := event.Goid
+
+			sc, ok := gmap.GetGoId2Sc(goid)
+			if ok {
+				event.SpanContext.TraceID = sc.TraceID
+				fmt.Printf("grpc client - sc for goid %d exist\n", goid)
+			} else {
+				psc, ok := gmap.GetAncestorSc(goid)
+				fmt.Printf("grpc client - get from ancestor for %d\n", goid)
+				if ok {
+					event.ParentSpanContext = psc
+					event.SpanContext.TraceID = psc.TraceID
+					fmt.Printf("grpc client - ancestor exist. take value of ancestor. TraceID: %s - SpanID: %s\n",
+						psc.TraceID.String(),
+						psc.SpanID.String())
+				}
+			}
+
+			eventsChan <- g.convertEvent(&event)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		var event GMapEvent
+		for {
+			record, err := g.gmapEventReader.Read()
+			if err != nil {
+				if errors.Is(err, perf.ErrClosed) {
+					return
+				}
+				logger.Error(err, "error reading from perf reader")
+				continue
+			}
+
+			if record.LostSamples != 0 {
+				logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
+				continue
+			}
+
+			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+				logger.Error(err, "error parsing perf event")
+				continue
+			}
+
+			fmt.Printf("grpc client get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
+				event.Type,
+				event.Key,
+				event.Value,
+				event.Sc.TraceID.String(),
+				event.Sc.SpanID.String())
+
+			if event.Type != gmap.GoId2Sc {
+				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")
+				continue
+			}
+
+			goid := event.Key
+
+			// if goroutine id already taken, then skip
+			sc, ok := gmap.GetGoId2Sc(goid)
+			if ok {
+				fmt.Printf("grpc client sc for goid %d exist\n", goid)
+				event.Sc.TraceID = sc.TraceID
+				continue
+			} else {
+				psc, ok := gmap.GetAncestorSc(goid)
+				if ok {
+					event.Sc.TraceID = psc.TraceID
+					fmt.Printf("grpc client found ancestor for %d\n", goid)
+				} else {
+					gmap.SetGoId2Sc(goid, event.Sc)
+					fmt.Printf("Type 4 grpc client set sc for %d\n", goid)
+				}
+			}
+			logger.Info(fmt.Sprintf("[DEBUG] - grpc client create map: %d - TraceID: %s - SpanID: %s\n",
+				goid,
+				event.Sc.TraceID.String(),
+				event.Sc.SpanID.String()))
+		}
+	}()
+
+	wg.Wait()
 }
 
 // According to https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/rpc.md
@@ -267,6 +381,10 @@ func (g *Instrumentor) Close() {
 	log.Logger.V(0).Info("closing gRPC instrumentor")
 	if g.eventsReader != nil {
 		g.eventsReader.Close()
+	}
+
+	if g.gmapEventReader != nil {
+		g.gmapEventReader.Close()
 	}
 
 	for _, r := range g.uprobes {

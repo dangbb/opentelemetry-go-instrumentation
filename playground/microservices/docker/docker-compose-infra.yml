@@ -94,6 +94,23 @@ services:
     networks:
       - service-mesh
 
+  # observability service
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=debug
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    restart: unless-stopped
+
   # main services
   interceptor:
     build:
@@ -253,6 +270,83 @@ services:
       - /proc:/host/proc
     networks:
       - service-mesh
+
+  # tracing service
+  go-auto-interceptor:
+    depends_on:
+      - jeager
+      - interceptor
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    privileged: true
+    pid: "host"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/interceptor
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=interceptor
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/host/proc
+
+  go-auto-audit-service:
+    depends_on:
+      - jeager
+      - audit-service
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    privileged: true
+    pid: "host"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/audit
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=audit-service
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/host/proc
+
+  go-auto-warehouse:
+    depends_on:
+      - jeager
+      - warehouse
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    privileged: true
+    pid: "host"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/warehouse
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=warehouse
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/host/proc
+
+  go-auto-customer:
+    depends_on:
+      - jeager
+      - customer
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    privileged: true
+    pid: "host"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/customer
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=customer
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/host/proc
 
 networks:
   service-mesh:

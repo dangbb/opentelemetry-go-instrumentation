@@ -1,6 +1,5 @@
 #include "bpf_helpers.h"
 
-#define MAX_SIZE 1024
 #define GOPC_PGOID 1
 #define GOID_GOPC 2
 #define GOID_SC 3

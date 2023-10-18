@@ -363,6 +363,10 @@ func (h *Instrumentor) Close() {
 		h.eventsReader.Close()
 	}
 
+	if h.gmapEventReader != nil {
+		h.gmapEventReader.Close()
+	}
+
 	for _, r := range h.uprobes {
 		r.Close()
 	}

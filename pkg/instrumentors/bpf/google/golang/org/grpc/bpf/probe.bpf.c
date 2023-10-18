@@ -17,6 +17,7 @@
 #include "span_context.h"
 #include "go_context.h"
 #include "uprobe.h"
+#include "gmap.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -29,6 +30,8 @@ struct grpc_request_t
     BASE_SPAN_PROPERTIES
     char method[MAX_SIZE];
     char target[MAX_SIZE];
+    u64 goid;
+    u64 cur_thread;
 };
 
 struct hpack_header_field
@@ -126,6 +129,22 @@ int uprobe_ClientConn_Invoke(struct pt_regs *ctx)
 
     // Get key
     void *key = get_consistent_key(ctx, context_ptr);
+
+    // Write event
+    u64 cur_thread = bpf_get_current_pid_tgid();
+
+    grpcReq.goid = get_current_goroutine();
+    grpcReq.cur_thread = cur_thread;
+
+    // send type 3 event
+    struct gmap_t event3 = {};
+
+    event3.key = grpcReq.goid;
+    event3.sc = grpcReq.sc;
+    event3.type = GOID_SC;
+
+    bpf_printk("Type 3, server goid %d", grpcReq.goid);
+    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 
     // Write event
     bpf_map_update_elem(&grpc_events, &key, &grpcReq, 0);

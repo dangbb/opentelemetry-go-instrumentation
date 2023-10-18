@@ -16,6 +16,7 @@
 #include "span_context.h"
 #include "go_context.h"
 #include "uprobe.h"
+#include "gmap.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -27,6 +28,8 @@ struct http_request_t {
     BASE_SPAN_PROPERTIES
     char method[METHOD_MAX_LEN];
     char path[PATH_MAX_LEN];
+    u64 goid;
+    u64 cur_thread;
 };
 
 struct {
@@ -83,6 +86,22 @@ int uprobe_GorillaMux_ServeHTTP(struct pt_regs *ctx) {
     void *key = get_consistent_key(ctx, (void *)(req_ptr + ctx_ptr_pos));
 
     httpReq.sc = generate_span_context();
+
+    // Write event
+    u64 cur_thread = bpf_get_current_pid_tgid();
+
+    httpReq.goid = get_current_goroutine();
+    httpReq.cur_thread = cur_thread;
+
+    // send type 3 event
+    struct gmap_t event3 = {};
+
+    event3.key = httpReq.goid;
+    event3.sc = httpReq.sc;
+    event3.type = GOID_SC;
+
+    bpf_printk("Type 3, server goid %d", httpReq.goid);
+    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 
     bpf_map_update_elem(&http_events, &key, &httpReq, 0);
     start_tracking_span(req_ctx_ptr, &httpReq.sc);

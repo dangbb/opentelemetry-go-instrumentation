@@ -3,19 +3,22 @@
 #include "go_context.h"
 #include "go_types.h"
 #include "uprobe.h"
+#include "gmap.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
-#define MAX_PATH_SIZE 100
+#define MAX_PATH_SIZE 50
 #define MAX_METHOD_SIZE 10
 #define W3C_KEY_LENGTH 11
 #define W3C_VAL_LENGTH 55
-#define MAX_CONCURRENT 50
+#define MAX_CONCURRENT 30
 
 struct http_request_t {
     BASE_SPAN_PROPERTIES
     char method[MAX_METHOD_SIZE];
     char path[MAX_PATH_SIZE];
+    u64 goid;
+    u64 cur_thread;
 };
 
 struct {
@@ -186,6 +189,21 @@ int uprobe_HttpClient_Do(struct pt_regs *ctx) {
     if (res < 0) {
         bpf_printk("uprobe_HttpClient_Do: Failed to inject header");
     }
+
+    // Write event
+    u64 cur_thread = bpf_get_current_pid_tgid();
+
+    httpReq.goid = get_current_goroutine();
+    httpReq.cur_thread = cur_thread;
+
+    // Send type 3 event
+    struct gmap_t event3 = {};
+
+    event3.key = get_current_goroutine();
+    event3.sc = httpReq.sc;
+    event3.type = GOID_SC;
+
+    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 
     // Get key
     void *key = get_consistent_key(ctx, context_ptr);
