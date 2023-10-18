@@ -38,16 +38,16 @@ services:
     networks:
       - service-mesh
 
-  warehouse-kafka:
+  kafka:
     image: confluentinc/cp-kafka:5.5.0
-    hostname: warehouse-kafka
-    container_name: warehouse-kafka
+    hostname: kafka
+    container_name: kafka
     restart: unless-stopped
     ports:
       - "${KAFKA_PORT}:9092"
       - "9093"
     environment:
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://warehouse-kafka:9093, EXTERNAL://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9093, EXTERNAL://kafka:9092
       KAFKA_LISTENERS: INTERNAL://:9093,EXTERNAL://:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
@@ -69,11 +69,11 @@ services:
       - '${KAFKA_UI_PORT}:8080'
     environment:
       KAFKA_CLUSTERS_0_NAME: warehouse
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: warehouse-kafka:9093
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
       KAFKA_CLUSTERS_0_ZOOKEEPER: warehouse-zoo:2181
     depends_on:
-      - warehouse-kafka
+      - kafka
       - warehouse-schema-registry
     networks:
       - service-mesh
@@ -85,10 +85,10 @@ services:
     restart: on-failure
     environment:
       SCHEMA_REGISTRY_HOST_NAME: warehouse-schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: warehouse-kafka:9093 # Kafka Broker
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9093 # Kafka Broker
     depends_on:
       - warehouse-zoo
-      - warehouse-kafka
+      - kafka
     ports:
       - '${SCHEMA_REGISTRY_PORT}:8081'
     networks:
@@ -194,7 +194,7 @@ services:
 
   warehouse:
     depends_on:
-      - warehouse-kafka
+      - kafka
     build:
       context: ..
       dockerfile: service/warehouse/.Dockerfile
@@ -212,7 +212,7 @@ services:
       MYSQL_USERNAME: username
       MYSQL_PASSWORD: password
 
-      KAFKA_BROKER: warehouse-kafka:9092
+      KAFKA_BROKER: kafka:9092
       KAFKA_TOPIC: warehouse
 
       INTERCEPTOR_ADDRESS: interceptor:8090

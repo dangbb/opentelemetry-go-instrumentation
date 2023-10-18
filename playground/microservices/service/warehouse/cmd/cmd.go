@@ -63,7 +63,7 @@ func (s *warehouse) InsertWarehouseHandler(w http.ResponseWriter, r *http.Reques
 		responseWithJson(w, http.StatusInternalServerError, map[string]string{"message": err.Error()})
 		return
 	}
-	logrus.Info("Done send to kafka. Value of partition %d , offset %d\n", partition, offset)
+	logrus.Infof("Done send to kafka. Value of partition %d , offset %d\n", partition, offset)
 
 	// create audit record
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -101,6 +101,8 @@ func newWarehouseService(config config.Config) (WarehouseService, error) {
 
 	cfg.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategySticky()}
 
+	logrus.Infof("Connect to broker addr: %s", config.KafkaConfig.Broker)
+
 	brokers := []string{config.KafkaConfig.Broker}
 
 	producer, err := sarama.NewSyncProducer(brokers, cfg)
@@ -131,6 +133,9 @@ func responseWithJson(writer http.ResponseWriter, status int, object interface{}
 }
 
 func main() {
+	logrus.Infof("Wait for 30 secs")
+
+	time.Sleep(30 * time.Second)
 	cfg := config.Config{}
 	kong.Parse(&cfg)
 
