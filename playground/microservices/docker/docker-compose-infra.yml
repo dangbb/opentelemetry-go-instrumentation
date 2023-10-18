@@ -116,10 +116,10 @@ services:
       KAFKA_BROKER: localhost:9092
       KAFKA_TOPIC: warehouse
 
-      INTERCEPTOR_ADDRESS: localhost:8090
-      AUDIT_ADDRESS: localhost:8091
-      WAREHOUSE_ADDRESS: http://localhost:8092
-      CUSTOMER_ADDRESS: http://localhost:8093
+      INTERCEPTOR_ADDRESS: interceptor:8090
+      AUDIT_ADDRESS: audit-service:8091
+      WAREHOUSE_ADDRESS: http://warehouse:8092
+      CUSTOMER_ADDRESS: http://customer:8093
     volumes:
       - /proc:/host/proc
     networks:
@@ -149,10 +149,10 @@ services:
       KAFKA_BROKER: localhost:9092
       KAFKA_TOPIC: warehouse
 
-      INTERCEPTOR_ADDRESS: localhost:8090
-      AUDIT_ADDRESS: localhost:8091
-      WAREHOUSE_ADDRESS: http://localhost:8092
-      CUSTOMER_ADDRESS: http://localhost:8093
+      INTERCEPTOR_ADDRESS: interceptor:8090
+      AUDIT_ADDRESS: audit-service:8091
+      WAREHOUSE_ADDRESS: http://warehouse:8092
+      CUSTOMER_ADDRESS: http://customer:8093
     volumes:
       - /proc:/host/proc
       - ../service/auditservice/migration:/app/migration
@@ -183,10 +183,10 @@ services:
       KAFKA_BROKER: localhost:9092
       KAFKA_TOPIC: warehouse
 
-      INTERCEPTOR_ADDRESS: localhost:8090
-      AUDIT_ADDRESS: localhost:8091
-      WAREHOUSE_ADDRESS: http://localhost:8092
-      CUSTOMER_ADDRESS: http://localhost:8093
+      INTERCEPTOR_ADDRESS: interceptor:8090
+      AUDIT_ADDRESS: audit-service:8091
+      WAREHOUSE_ADDRESS: http://warehouse:8092
+      CUSTOMER_ADDRESS: http://customer:8093
     volumes:
       - /proc:/host/proc
     networks:
@@ -215,10 +215,10 @@ services:
       KAFKA_BROKER: warehouse-kafka:9092
       KAFKA_TOPIC: warehouse
 
-      INTERCEPTOR_ADDRESS: localhost:8090
-      AUDIT_ADDRESS: localhost:8091
-      WAREHOUSE_ADDRESS: http://localhost:8092
-      CUSTOMER_ADDRESS: http://localhost:8093
+      INTERCEPTOR_ADDRESS: interceptor:8090
+      AUDIT_ADDRESS: audit-service:8091
+      WAREHOUSE_ADDRESS: http://warehouse:8092
+      CUSTOMER_ADDRESS: http://customer:8093
     volumes:
       - /proc:/host/proc
     networks:
@@ -245,10 +245,10 @@ services:
       KAFKA_BROKER: localhost:9092
       KAFKA_TOPIC: warehouse
 
-      INTERCEPTOR_ADDRESS: localhost:8090
-      AUDIT_ADDRESS: localhost:8091
-      WAREHOUSE_ADDRESS: http://localhost:8092
-      CUSTOMER_ADDRESS: http://localhost:8093
+      INTERCEPTOR_ADDRESS: interceptor:8090
+      AUDIT_ADDRESS: audit-service:8091
+      WAREHOUSE_ADDRESS: http://warehouse:8092
+      CUSTOMER_ADDRESS: http://customer:8093
     volumes:
       - /proc:/host/proc
     networks:
