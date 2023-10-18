@@ -122,6 +122,8 @@ services:
       CUSTOMER_ADDRESS: http://localhost:8093
     volumes:
       - /proc:/host/proc
+    networks:
+      - service-mesh
 
   audit-service-migrate:
     build:
@@ -142,6 +144,8 @@ services:
       MYSQL_USERNAME: username
       MYSQL_PASSWORD: password
 
+      MIGRATION_FOLDER: /app/migration
+
       KAFKA_BROKER: localhost:9092
       KAFKA_TOPIC: warehouse
 
@@ -151,6 +155,9 @@ services:
       CUSTOMER_ADDRESS: http://localhost:8093
     volumes:
       - /proc:/host/proc
+      - ../service/auditservice/migration:/app/migration
+    networks:
+      - service-mesh
 
   audit-service:
     depends_on:
@@ -182,6 +189,8 @@ services:
       CUSTOMER_ADDRESS: http://localhost:8093
     volumes:
       - /proc:/host/proc
+    networks:
+      - service-mesh
 
   warehouse:
     depends_on:
@@ -212,6 +221,8 @@ services:
       CUSTOMER_ADDRESS: http://localhost:8093
     volumes:
       - /proc:/host/proc
+    networks:
+      - service-mesh
 
   customer:
     build:
@@ -240,6 +251,8 @@ services:
       CUSTOMER_ADDRESS: http://localhost:8093
     volumes:
       - /proc:/host/proc
+    networks:
+      - service-mesh
 
 networks:
   service-mesh:
