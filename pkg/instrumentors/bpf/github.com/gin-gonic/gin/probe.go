@@ -142,6 +142,12 @@ func (h *Instrumentor) Load(ctx *context.InstrumentorContext) error {
 	}
 	h.eventsReader = rd
 
+	gmrd, err := perf.NewReader(h.bpfObjects.GmapEvents, os.Getpagesize())
+	if err != nil {
+		return err
+	}
+	h.gmapEventReader = gmrd
+
 	return nil
 }
 
