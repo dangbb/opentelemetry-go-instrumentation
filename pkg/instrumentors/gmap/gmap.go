@@ -144,11 +144,8 @@ func RegisterSpan(event GMapEvent, lib string) {
 }
 
 func EnrichSpan(event context.IBaseSpan, goid uint64, lib string) {
-	currentSc := event.GetSpanContext()
 	sc, ok := GetGoId2Sc(goid)
 	if ok { // same goroutine sc exist
-		currentSc.TraceID = sc.TraceID
-		event.SetSpanContext(currentSc)
 		event.SetParentSpanContext(sc)
 		fmt.Printf("sc for goid %d exist - %s\n", goid, lib)
 	} else {
@@ -156,8 +153,6 @@ func EnrichSpan(event context.IBaseSpan, goid uint64, lib string) {
 		fmt.Printf("get from ancestor for %d - %s\n", goid, lib)
 		if ok { // parent goroutine sc exist
 			event.SetParentSpanContext(psc)
-			currentSc.TraceID = psc.TraceID
-			event.SetSpanContext(currentSc)
 			fmt.Printf("ancestor exist %s. take value of ancestor. TraceID: %s - SpanID: %s\n",
 				lib,
 				psc.TraceID.String(),

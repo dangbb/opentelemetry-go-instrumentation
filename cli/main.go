@@ -43,21 +43,21 @@ func main() {
 	runners := []*runner.Runner{}
 
 	for _, job := range config.Jobs {
-		runner := runner.NewRunner(job)
-		err = runner.Run()
+		r := runner.NewRunner(job)
+		err = r.Run()
 		if err != nil {
 			panic(err)
 		}
 
-		runners = append(runners, &runner)
+		runners = append(runners, &r)
 	}
 
 	stopper := make(chan os.Signal, 1)
 	signal.Notify(stopper, os.Interrupt, syscall.SIGTERM)
 
 	<-stopper
-	for _, runner := range runners {
-		runner.Close()
+	for _, r := range runners {
+		r.Close()
 	}
 
 	fmt.Println("Graceful shutdown")
