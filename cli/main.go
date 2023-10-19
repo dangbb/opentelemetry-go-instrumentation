@@ -16,16 +16,16 @@ package main
 
 import (
 	"fmt"
+	"go.opentelemetry.io/auto/pkg/runner"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"go.opentelemetry.io/auto/pkg/errors"
-	"go.opentelemetry.io/auto/pkg/instrumentors"
 	"go.opentelemetry.io/auto/pkg/log"
-	"go.opentelemetry.io/auto/pkg/opentelemetry"
 	"go.opentelemetry.io/auto/pkg/process"
 )
+
+const configFileEnvVar = "CONFIG_FILE_PATH"
 
 func main() {
 	err := log.Init()
@@ -34,60 +34,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Logger.V(0).Info("starting Go OpenTelemetry Agent ...")
-	// TODO Change this part so it's get data from file instead of from ENV
-	target := process.ParseTargetArgs()
-	if err = target.Validate(); err != nil {
-		log.Logger.Error(err, "invalid target args")
-		return
+	filepath, exists := os.LookupEnv(configFileEnvVar)
+	if !exists {
+		panic("File path not exist")
 	}
 
-	// TODO Move this part from into multiple handler
-	// TODO, consider using common storage (redis) if resource consume is high
-	processAnalyzer := process.NewAnalyzer()
-	otelController, err := opentelemetry.NewController()
-	if err != nil {
-		log.Logger.Error(err, "unable to create OpenTelemetry controller")
-		return
-	}
+	config := process.ParseJobConfig(filepath)
+	runners := []*runner.Runner{}
 
-	instManager, err := instrumentors.NewManager(otelController)
-	if err != nil {
-		log.Logger.Error(err, "error creating instrumetors manager")
-		return
+	for _, job := range config.Jobs {
+		runner := runner.NewRunner(job)
+		err = runner.Run()
+		if err != nil {
+			panic(err)
+		}
+
+		runners = append(runners, &runner)
 	}
 
 	stopper := make(chan os.Signal, 1)
 	signal.Notify(stopper, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-stopper
-		log.Logger.V(0).Info("Got SIGTERM, cleaning up..")
-		processAnalyzer.Close()
-		instManager.Close()
-	}()
 
-	pid, err := processAnalyzer.DiscoverProcessID(target)
-	if err != nil {
-		if err != errors.ErrInterrupted {
-			log.Logger.Error(err, "error while discovering process id")
-		}
-		return
+	<-stopper
+	for _, runner := range runners {
+		runner.Close()
 	}
 
-	targetDetails, err := processAnalyzer.Analyze(pid, instManager.GetRelevantFuncs())
-	if err != nil {
-		log.Logger.Error(err, "error while analyzing target process")
-		return
-	}
-	log.Logger.V(0).Info("target process analysis completed", "pid", targetDetails.PID,
-		"go_version", targetDetails.GoVersion, "dependencies", targetDetails.Libraries,
-		"total_functions_found", len(targetDetails.Functions))
-
-	instManager.FilterUnusedInstrumentors(targetDetails)
-
-	log.Logger.V(0).Info("invoking instrumentors")
-	err = instManager.Run(targetDetails)
-	if err != nil && err != errors.ErrInterrupted {
-		log.Logger.Error(err, "error while running instrumentors")
-	}
+	fmt.Println("Graceful shutdown")
 }

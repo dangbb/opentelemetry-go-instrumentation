@@ -272,28 +272,12 @@ services:
       - service-mesh
 
   # tracing service
-  go-auto-interceptor:
+  go-auto-combine:
     depends_on:
       - jeager
       - interceptor
-    build:
-      context: ../../..
-      dockerfile: Dockerfile
-    privileged: true
-    pid: "host"
-    environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
-      - OTEL_GO_AUTO_TARGET_EXE=/app/interceptor
-      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
-      - OTEL_SERVICE_NAME=interceptor
-      - OTEL_PROPAGATORS=tracecontext,baggage
-      - CGO_ENABLED=1
-    volumes:
-      - /proc:/host/proc
-
-  go-auto-audit-service:
-    depends_on:
-      - jeager
+      - consumer
+      - warehouse
       - audit-service
     build:
       context: ../../..
@@ -302,51 +286,13 @@ services:
     pid: "host"
     environment:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
-      - OTEL_GO_AUTO_TARGET_EXE=/app/audit
+      - CONFIG_FILE_PATH=/app/shared/config.yaml
       - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
-      - OTEL_SERVICE_NAME=audit-service
       - OTEL_PROPAGATORS=tracecontext,baggage
       - CGO_ENABLED=1
     volumes:
       - /proc:/host/proc
-
-  go-auto-warehouse:
-    depends_on:
-      - jeager
-      - warehouse
-    build:
-      context: ../../..
-      dockerfile: Dockerfile
-    privileged: true
-    pid: "host"
-    environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
-      - OTEL_GO_AUTO_TARGET_EXE=/app/warehouse
-      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
-      - OTEL_SERVICE_NAME=warehouse
-      - OTEL_PROPAGATORS=tracecontext,baggage
-      - CGO_ENABLED=1
-    volumes:
-      - /proc:/host/proc
-
-  go-auto-customer:
-    depends_on:
-      - jeager
-      - customer
-    build:
-      context: ../../..
-      dockerfile: Dockerfile
-    privileged: true
-    pid: "host"
-    environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
-      - OTEL_GO_AUTO_TARGET_EXE=/app/customer
-      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
-      - OTEL_SERVICE_NAME=customer
-      - OTEL_PROPAGATORS=tracecontext,baggage
-      - CGO_ENABLED=1
-    volumes:
-      - /proc:/host/proc
+      - ./shared/config.yaml:/app/shared/config.yaml
 
 networks:
   service-mesh:

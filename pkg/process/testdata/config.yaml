@@ -1,0 +1,7 @@
+jobs:
+  - name: interceptor
+    binary_path: /app/interceptor
+    service_name: interceptor
+  - name: customer
+    binary_path: /app/customer
+    service_name: customer

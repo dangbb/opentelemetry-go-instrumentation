@@ -16,7 +16,6 @@ package process
 
 import (
 	"errors"
-	"os"
 )
 
 // ExePathEnvVar is the environment variable key whose value points to the
@@ -39,13 +38,9 @@ func (t *TargetArgs) Validate() error {
 
 // ParseTargetArgs returns TargetArgs for the target pointed to by the
 // environment variable OTEL_GO_AUTO_TARGET_EXE.
-func ParseTargetArgs() *TargetArgs {
+func ParseTargetArgs(binaryPath string) *TargetArgs {
 	result := &TargetArgs{}
-
-	val, exists := os.LookupEnv(ExePathEnvVar)
-	if exists {
-		result.ExePath = val
-	}
+	result.ExePath = binaryPath
 
 	return result
 }

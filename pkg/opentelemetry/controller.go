@@ -20,7 +20,6 @@ package opentelemetry
 import (
 	"context"
 	"fmt"
-	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -101,12 +100,7 @@ func (c *Controller) convertTime(t int64) time.Time {
 }
 
 // NewController returns a new initialized [Controller].
-func NewController() (*Controller, error) {
-	serviceName, exists := os.LookupEnv(otelServiceNameEnvVar)
-	if !exists {
-		return nil, fmt.Errorf("%s env var must be set", otelServiceNameEnvVar)
-	}
-
+func NewController(serviceName string) (*Controller, error) {
 	ctx := context.Background()
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
