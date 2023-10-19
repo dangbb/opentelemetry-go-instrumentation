@@ -35,13 +35,15 @@ func main() {
 	}
 
 	log.Logger.V(0).Info("starting Go OpenTelemetry Agent ...")
-	// examine target -
+	// TODO Change this part so it's get data from file instead of from ENV
 	target := process.ParseTargetArgs()
 	if err = target.Validate(); err != nil {
 		log.Logger.Error(err, "invalid target args")
 		return
 	}
 
+	// TODO Move this part from into multiple handler
+	// TODO, consider using common storage (redis) if resource consume is high
 	processAnalyzer := process.NewAnalyzer()
 	otelController, err := opentelemetry.NewController()
 	if err != nil {
