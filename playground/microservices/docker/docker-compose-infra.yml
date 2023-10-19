@@ -274,7 +274,7 @@ services:
   # tracing service
   go-auto-interceptor:
     depends_on:
-      - jeager
+      - jaeger
       - interceptor
     build:
       context: ../../..
@@ -293,7 +293,7 @@ services:
 
   go-auto-audit-service:
     depends_on:
-      - jeager
+      - jaeger
       - audit-service
     build:
       context: ../../..
@@ -312,7 +312,7 @@ services:
 
   go-auto-warehouse:
     depends_on:
-      - jeager
+      - jaeger
       - warehouse
     build:
       context: ../../..
@@ -331,7 +331,7 @@ services:
 
   go-auto-customer:
     depends_on:
-      - jeager
+      - jaeger
       - customer
     build:
       context: ../../..

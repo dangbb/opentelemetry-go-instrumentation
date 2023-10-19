@@ -202,10 +202,19 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
+			fmt.Printf("Receive event from lib %s - psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+				h.LibraryName(),
+				event.ParentSpanContext.TraceID.String(),
+				event.ParentSpanContext.SpanID.String(),
+				event.SpanContext.TraceID.String(),
+				event.SpanContext.SpanID.String(),
+				event.CurThread,
+				event.Goid)
+
 			oldEvent := event
 			gmap.EnrichSpan(&event, event.Goid, h.LibraryName())
 
-			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+			fmt.Printf("After enrich at lib %s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
 				h.LibraryName(),
 				event.ParentSpanContext.TraceID.String(),
 				event.ParentSpanContext.SpanID.String(),
@@ -225,6 +234,13 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				bridgeEvent.StartTime = oldEvent.StartTime
 				bridgeEvent.EndTime = oldEvent.EndTime
 				// TODO check: This cause 2 span id to be identical, dont know if it really matter
+
+				fmt.Printf("Create bridge at lib %s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s\n",
+					h.LibraryName(),
+					bridgeEvent.ParentSpanContext.TraceID.String(),
+					bridgeEvent.ParentSpanContext.SpanID.String(),
+					bridgeEvent.SpanContext.TraceID.String(),
+					bridgeEvent.SpanContext.SpanID.String())
 
 				eventsChan <- h.convertEvent(&bridgeEvent)
 			}
