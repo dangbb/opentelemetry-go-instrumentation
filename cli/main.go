@@ -44,10 +44,13 @@ func main() {
 
 	for _, job := range config.Jobs {
 		r := runner.NewRunner(job)
-		err = r.Run()
-		if err != nil {
-			panic(err)
-		}
+
+		go func() {
+			err = r.Run()
+			if err != nil {
+				panic(err)
+			}
+		}()
 
 		runners = append(runners, &r)
 	}
