@@ -4,8 +4,8 @@ import (
 	"github.com/alecthomas/kong"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/sirupsen/logrus"
-	"microservice/config"
 	"microservice/pkg/migrate"
+	"microservice/service/auditservice/config"
 	"microservice/service/auditservice/serve"
 	"time"
 )

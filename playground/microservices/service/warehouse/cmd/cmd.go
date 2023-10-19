@@ -16,9 +16,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"microservice/config"
 	pb "microservice/pb/proto"
 	"microservice/pkg/service"
+	"microservice/service/warehouse/config"
 )
 
 type WarehouseService interface {
@@ -106,12 +106,15 @@ func newWarehouseService(config config.Config) (WarehouseService, error) {
 	brokers := []string{config.KafkaConfig.Broker}
 
 	producer, err := sarama.NewSyncProducer(brokers, cfg)
+	if err != nil {
+		logrus.Fatalf("cant establish kafka conn %s", err.Error())
+	}
 
 	// craft grpc client instance
 	conn, err := grpc.Dial(config.AuditAddress, grpc.WithTransportCredentials(
 		insecure.NewCredentials()))
 	if err != nil {
-		logrus.Fatalf("can establish grpc client conn %s", err.Error())
+		logrus.Fatalf("cant establish grpc client conn %s", err.Error())
 	}
 
 	c := pb.NewAuditServiceClient(conn)
@@ -133,9 +136,6 @@ func responseWithJson(writer http.ResponseWriter, status int, object interface{}
 }
 
 func main() {
-	logrus.Infof("Wait for 30 secs")
-
-	time.Sleep(30 * time.Second)
 	cfg := config.Config{}
 	kong.Parse(&cfg)
 

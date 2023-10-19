@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"io"
-	"microservice/config"
 	pb "microservice/pb/proto"
 	"microservice/pkg/service"
+	"microservice/service/interceptor/config"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

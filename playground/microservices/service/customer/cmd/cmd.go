@@ -8,7 +8,7 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/sirupsen/logrus"
 
-	config2 "microservice/config"
+	config2 "microservice/service/customer/config"
 )
 
 func main() {

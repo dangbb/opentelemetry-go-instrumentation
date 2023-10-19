@@ -12,9 +12,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"microservice/config"
 	pb "microservice/pb/proto"
 	"microservice/pkg/service"
+	"microservice/service/auditservice/config"
 )
 
 type AuditServer struct {
