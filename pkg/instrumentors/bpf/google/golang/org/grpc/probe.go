@@ -230,6 +230,7 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
+			oldEvent := event
 			gmap.EnrichSpan(&event, event.Goid, g.LibraryName())
 
 			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
@@ -242,6 +243,19 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				event.Goid)
 
 			eventsChan <- g.convertEvent(&event)
+
+			// check if new trace is being modified
+			if oldEvent.SpanContext.TraceID.String() != event.SpanContext.TraceID.String() {
+				bridgeEvent := Event{}
+
+				bridgeEvent.SpanContext = oldEvent.SpanContext
+				bridgeEvent.ParentSpanContext = event.SpanContext
+				bridgeEvent.StartTime = oldEvent.StartTime
+				bridgeEvent.EndTime = oldEvent.EndTime
+				// TODO check: This cause 2 span id to be identical, dont know if it really matter
+
+				eventsChan <- g.convertEvent(&bridgeEvent)
+			}
 		}
 	}()
 
