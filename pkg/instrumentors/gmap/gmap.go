@@ -2,9 +2,9 @@ package gmap
 
 import (
 	"fmt"
-	"go.opentelemetry.io/auto/pkg/instrumentors/constant"
 	"sync"
 
+	"go.opentelemetry.io/auto/pkg/instrumentors/constant"
 	"go.opentelemetry.io/auto/pkg/instrumentors/context"
 )
 
@@ -39,6 +39,11 @@ func getAncestorSc(goid uint64) (context.EBPFSpanContext, bool, bool) {
 		sc, ok := GetGoId2Sc(pgoid)
 		if !ok {
 			goid = pgoid
+			continue
+		}
+
+		if pgoid == 1 {
+			// ignore case where pgoid = 1. No connect to root cause.
 			continue
 		}
 
@@ -104,4 +109,59 @@ func GetGoId2Sc(key uint64) (context.EBPFSpanContext, bool) {
 
 	res, ok := goId2Sc[key]
 	return res, ok
+}
+
+// Define gmap event
+type GMapEvent struct {
+	Key   uint64
+	Value uint64
+	Sc    context.EBPFSpanContext
+	Type  uint64
+}
+
+func RegisterSpan(event GMapEvent, lib string) {
+	goid := event.Key
+
+	// if goroutine id already taken, then skip
+	sc, ok := GetGoId2Sc(goid)
+	if ok {
+		event.Sc.TraceID = sc.TraceID
+		fmt.Printf("sc for goid %d exist - %s\n", goid, lib)
+		return
+	} else {
+		_, ok := GetAncestorSc(goid)
+		if ok {
+			fmt.Printf("logrus found ancestor for %d - %s\n", goid, lib)
+		} else {
+			SetGoId2Sc(goid, event.Sc)
+			fmt.Printf("Type 4 %s set sc for %d - trace id: %s - span id: %s\n",
+				lib,
+				goid,
+				event.Sc.TraceID,
+				event.Sc.SpanID)
+		}
+	}
+}
+
+func EnrichSpan(event context.IBaseSpan, goid uint64, lib string) {
+	currentSc := event.GetSpanContext()
+	sc, ok := GetGoId2Sc(goid)
+	if ok { // same goroutine sc exist
+		currentSc.TraceID = sc.TraceID
+		event.SetSpanContext(currentSc)
+		event.SetParentSpanContext(sc)
+		fmt.Printf("sc for goid %d exist - %s\n", goid, lib)
+	} else {
+		psc, ok := GetAncestorSc(goid)
+		fmt.Printf("get from ancestor for %d - %s\n", goid, lib)
+		if ok { // parent goroutine sc exist
+			event.SetParentSpanContext(psc)
+			currentSc.TraceID = psc.TraceID
+			event.SetSpanContext(currentSc)
+			fmt.Printf("ancestor exist %s. take value of ancestor. TraceID: %s - SpanID: %s\n",
+				lib,
+				psc.TraceID.String(),
+				psc.SpanID.String())
+		}
+	}
 }

@@ -51,13 +51,6 @@ const (
 	instrumentorName = "sirupsen/logrus-instrumentor"
 )
 
-type GMapEvent struct {
-	Key   uint64
-	Value uint64
-	Sc    context.EBPFSpanContext
-	Type  uint64
-}
-
 type Event struct {
 	context.BaseSpanProperties
 	Level       uint64
@@ -202,29 +195,16 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			fmt.Printf("Logrus write trace sc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n\n",
+			gmap.EnrichSpan(&event, event.Goid, i.LibraryName())
+
+			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+				i.LibraryName(),
+				event.ParentSpanContext.TraceID.String(),
+				event.ParentSpanContext.SpanID.String(),
 				event.SpanContext.TraceID.String(),
 				event.SpanContext.SpanID.String(),
 				event.CurThread,
 				event.Goid)
-
-			goid := event.Goid
-
-			sc, ok := gmap.GetGoId2Sc(goid)
-			if ok { // same goroutine sc exist
-				event.SpanContext.TraceID = sc.TraceID
-				fmt.Printf("Logrus - sc for goid %d exist\n", goid)
-			} else {
-				psc, ok := gmap.GetAncestorSc(goid)
-				fmt.Printf("Logrus - get from ancestor for %d\n", goid)
-				if ok { // parent goroutine sc exist
-					event.ParentSpanContext = psc
-					event.SpanContext.TraceID = psc.TraceID
-					fmt.Printf("Logrus - ancestor exist. take value of ancestor. TraceID: %s - SpanID: %s\n",
-						psc.TraceID.String(),
-						psc.SpanID.String())
-				}
-			}
 
 			eventsChan <- i.convertEvent(&event)
 		}
@@ -232,7 +212,7 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 	go func() {
 		defer wg.Done()
-		var event GMapEvent
+		var event gmap.GMapEvent
 		for {
 			record, err := i.gmapEventReader.Read()
 			if err != nil {
@@ -265,28 +245,7 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			goid := event.Key
-
-			// if goroutine id already taken, then skip
-			sc, ok := gmap.GetGoId2Sc(goid)
-			if ok {
-				event.Sc.TraceID = sc.TraceID
-				fmt.Printf("logrus sc for goid %d exist\n", goid)
-				continue
-			} else {
-				psc, ok := gmap.GetAncestorSc(goid)
-				if ok {
-					fmt.Printf("logrus found ancestor for %d\n", goid)
-					event.Sc.TraceID = psc.TraceID
-				} else {
-					gmap.SetGoId2Sc(goid, event.Sc)
-					fmt.Printf("Type 4 logrus set sc for %d\n", goid)
-				}
-			}
-			logger.Info(fmt.Sprintf("[DEBUG] - Logrus create map: %d - TraceID: %s - SpanID: %s\n",
-				goid,
-				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String()))
+			gmap.RegisterSpan(event, i.LibraryName())
 		}
 	}()
 

@@ -59,13 +59,6 @@ type Event struct {
 	CurThread uint64
 }
 
-type GMapEvent struct {
-	Key   uint64
-	Value uint64
-	Sc    context.EBPFSpanContext
-	Type  uint64
-}
-
 // Instrumentor is the gRPC client instrumentor.
 type Instrumentor struct {
 	bpfObjects      *bpfObjects
@@ -237,29 +230,16 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			fmt.Printf("grpc client write trace sc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+			gmap.EnrichSpan(&event, event.Goid, g.LibraryName())
+
+			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+				g.LibraryName(),
+				event.ParentSpanContext.TraceID.String(),
+				event.ParentSpanContext.SpanID.String(),
 				event.SpanContext.TraceID.String(),
 				event.SpanContext.SpanID.String(),
 				event.CurThread,
 				event.Goid)
-
-			goid := event.Goid
-
-			sc, ok := gmap.GetGoId2Sc(goid)
-			if ok {
-				event.SpanContext.TraceID = sc.TraceID
-				fmt.Printf("grpc client - sc for goid %d exist\n", goid)
-			} else {
-				psc, ok := gmap.GetAncestorSc(goid)
-				fmt.Printf("grpc client - get from ancestor for %d\n", goid)
-				if ok {
-					event.ParentSpanContext = psc
-					event.SpanContext.TraceID = psc.TraceID
-					fmt.Printf("grpc client - ancestor exist. take value of ancestor. TraceID: %s - SpanID: %s\n",
-						psc.TraceID.String(),
-						psc.SpanID.String())
-				}
-			}
 
 			eventsChan <- g.convertEvent(&event)
 		}
@@ -267,7 +247,7 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 	go func() {
 		defer wg.Done()
-		var event GMapEvent
+		var event gmap.GMapEvent
 		for {
 			record, err := g.gmapEventReader.Read()
 			if err != nil {
@@ -300,28 +280,7 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			goid := event.Key
-
-			// if goroutine id already taken, then skip
-			sc, ok := gmap.GetGoId2Sc(goid)
-			if ok {
-				fmt.Printf("grpc client sc for goid %d exist\n", goid)
-				event.Sc.TraceID = sc.TraceID
-				continue
-			} else {
-				psc, ok := gmap.GetAncestorSc(goid)
-				if ok {
-					event.Sc.TraceID = psc.TraceID
-					fmt.Printf("grpc client found ancestor for %d\n", goid)
-				} else {
-					gmap.SetGoId2Sc(goid, event.Sc)
-					fmt.Printf("Type 4 grpc client set sc for %d\n", goid)
-				}
-			}
-			logger.Info(fmt.Sprintf("[DEBUG] - grpc client create map: %d - TraceID: %s - SpanID: %s\n",
-				goid,
-				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String()))
+			gmap.RegisterSpan(event, g.LibraryName())
 		}
 	}()
 
@@ -342,7 +301,8 @@ func (g *Instrumentor) convertEvent(e *Event) *events.Event {
 
 	attrs = append(attrs, semconv.RPCSystemKey.String("grpc"),
 		semconv.RPCServiceKey.String(method),
-		semconv.NetPeerNameKey.String(target))
+		semconv.NetPeerNameKey.String(target),
+		attribute.Key("go-id").Int64(int64(e.Goid)))
 
 	sc := trace.NewSpanContext(trace.SpanContextConfig{
 		TraceID:    e.SpanContext.TraceID,

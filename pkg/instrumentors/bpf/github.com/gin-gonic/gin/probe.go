@@ -61,13 +61,6 @@ type Event struct {
 	CurThread uint64
 }
 
-type GMapEvent struct {
-	Key   uint64
-	Value uint64
-	Sc    context.EBPFSpanContext
-	Type  uint64
-}
-
 // Instrumentor is the gin-gonic/gin instrumentor.
 type Instrumentor struct {
 	bpfObjects      *bpfObjects
@@ -216,29 +209,16 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			fmt.Printf("Server write trace sc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+			gmap.EnrichSpan(&event, event.Goid, h.LibraryName())
+
+			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+				h.LibraryName(),
+				event.ParentSpanContext.TraceID.String(),
+				event.ParentSpanContext.SpanID.String(),
 				event.SpanContext.TraceID.String(),
 				event.SpanContext.SpanID.String(),
 				event.CurThread,
 				event.Goid)
-
-			goid := event.Goid
-
-			sc, ok := gmap.GetGoId2Sc(goid)
-			if ok {
-				event.SpanContext.TraceID = sc.TraceID
-				fmt.Printf("Server - sc for goid %d exist\n", goid)
-			} else {
-				psc, ok := gmap.GetAncestorSc(goid)
-				fmt.Printf("Server - get from ancestor for %d\n", goid)
-				if ok {
-					event.ParentSpanContext = psc
-					event.SpanContext.TraceID = psc.TraceID
-					fmt.Printf("Server - ancestor exist. take value of ancestor. TraceID: %s - SpanID: %s\n",
-						psc.TraceID.String(),
-						psc.SpanID.String())
-				}
-			}
 
 			eventsChan <- h.convertEvent(&event)
 		}
@@ -246,7 +226,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 	go func() {
 		defer wg.Done()
-		var event GMapEvent
+		var event gmap.GMapEvent
 		for {
 			record, err := h.gmapEventReader.Read()
 			if err != nil {
@@ -279,28 +259,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			goid := event.Key
-
-			// if goroutine id already taken, then skip
-			sc, ok := gmap.GetGoId2Sc(goid)
-			if ok {
-				fmt.Printf("Server sc for goid %d exist\n", goid)
-				event.Sc.TraceID = sc.TraceID
-				continue
-			} else {
-				psc, ok := gmap.GetAncestorSc(goid)
-				if ok {
-					event.Sc.TraceID = psc.TraceID
-					fmt.Printf("Server found ancestor for %d\n", goid)
-				} else {
-					gmap.SetGoId2Sc(goid, event.Sc)
-					fmt.Printf("Type 4 server set sc for %d\n", goid)
-				}
-			}
-			logger.Info(fmt.Sprintf("[DEBUG] - Server create map: %d - TraceID: %s - SpanID: %s\n",
-				goid,
-				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String()))
+			gmap.RegisterSpan(event, h.LibraryName())
 		}
 	}()
 
@@ -330,6 +289,7 @@ func (h *Instrumentor) convertEvent(e *Event) *events.Event {
 		Attributes: []attribute.KeyValue{
 			semconv.HTTPMethodKey.String(method),
 			semconv.HTTPTargetKey.String(path),
+			attribute.Key("go-id").Int64(int64(e.Goid)),
 		},
 	}
 }

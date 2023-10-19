@@ -25,6 +25,29 @@ type BaseSpanProperties struct {
 	TraceRoot         uint64
 }
 
+type IBaseSpan interface {
+	GetSpanContext() EBPFSpanContext
+	GetParentSpanContext() EBPFSpanContext
+	SetSpanContext(EBPFSpanContext)
+	SetParentSpanContext(EBPFSpanContext)
+}
+
+func (b *BaseSpanProperties) GetSpanContext() EBPFSpanContext {
+	return b.SpanContext
+}
+
+func (b *BaseSpanProperties) GetParentSpanContext() EBPFSpanContext {
+	return b.ParentSpanContext
+}
+
+func (b *BaseSpanProperties) SetSpanContext(sc EBPFSpanContext) {
+	b.SpanContext = sc
+}
+
+func (b *BaseSpanProperties) SetParentSpanContext(psc EBPFSpanContext) {
+	b.ParentSpanContext = psc
+}
+
 // EBPFSpanContext is the the span context representation within the eBPF
 // instrumentation system.
 type EBPFSpanContext struct {
