@@ -256,7 +256,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			fmt.Printf("Server get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
+			fmt.Printf("Gin-Gonic get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
 				event.Type,
 				event.Key,
 				event.Value,

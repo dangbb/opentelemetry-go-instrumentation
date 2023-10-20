@@ -294,7 +294,7 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	return &events.Event{
 		Library:           i.LibraryName(),
 		Name:              fmt.Sprintf("Logrus level: %s", Level),
-		Kind:              trace.SpanKindServer,
+		Kind:              trace.SpanKindInternal,
 		StartTime:         int64(e.StartTime),
 		EndTime:           int64(e.EndTime),
 		SpanContext:       &sc,

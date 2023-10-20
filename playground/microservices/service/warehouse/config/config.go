@@ -5,7 +5,7 @@ import (
 )
 
 type KafkaConfig struct {
-	Broker string `name:"broker" help:"Kafka broker address" env:"KAFKA_BROKER" default:"localhost:9093"`
+	Broker string `name:"broker" help:"Kafka broker address" env:"KAFKA_BROKER" default:"localhost:9092"`
 	Topic  string `name:"topic" help:"Kafka topic" env:"KAFKA_TOPIC" default:"warehouse"`
 }
 

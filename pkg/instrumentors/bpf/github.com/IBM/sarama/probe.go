@@ -330,7 +330,7 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	return &events.Event{
 		Name:              fmt.Sprintf("Sarama topic: %s", topic),
 		Library:           i.LibraryName(),
-		Kind:              trace.SpanKindServer,
+		Kind:              trace.SpanKindInternal,
 		StartTime:         int64(e.StartTime),
 		EndTime:           int64(e.EndTime),
 		SpanContext:       &sc,

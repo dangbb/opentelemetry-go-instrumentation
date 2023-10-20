@@ -48,6 +48,9 @@ func RunAuditServer(cfg config.Config) {
 		Logger:                                   logger.Default,
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
+	if err != nil {
+		logrus.Fatalf("cannot to connect to DB at %s: %s\n", cfg.MySqlConfig.GetDsn(), err)
+	}
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", cfg.GrpcPort))
 	if err != nil {

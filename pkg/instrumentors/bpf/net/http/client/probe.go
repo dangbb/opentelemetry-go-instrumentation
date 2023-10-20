@@ -270,7 +270,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			fmt.Printf("Server get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
+			fmt.Printf("net.http/Client get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
 				event.Type,
 				event.Key,
 				event.Value,
@@ -301,6 +301,8 @@ func (h *Instrumentor) convertEvent(e *Event) *events.Event {
 
 	var pscPtr *trace.SpanContext
 	if e.ParentSpanContext.TraceID.IsValid() {
+		fmt.Println("parent span exist")
+
 		psc := trace.NewSpanContext(trace.SpanContextConfig{
 			TraceID:    e.ParentSpanContext.TraceID,
 			SpanID:     e.ParentSpanContext.SpanID,
@@ -311,6 +313,8 @@ func (h *Instrumentor) convertEvent(e *Event) *events.Event {
 	} else {
 		pscPtr = nil
 	}
+
+	fmt.Println("grpc client create event")
 
 	return &events.Event{
 		Library:     h.LibraryName(),
