@@ -22,7 +22,7 @@
 char __license[] SEC("license") = "Dual MIT/GPL";
 
 #define MAX_SIZE 100
-#define MAX_CONCURRENT 50
+#define MAX_CONCURRENT 25
 #define MAX_HEADERS 20
 #define MAX_HEADER_STRING 50
 #define W3C_KEY_LENGTH 11

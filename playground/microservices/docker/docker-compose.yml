@@ -275,7 +275,7 @@ services:
   go-auto-interceptor:
     depends_on:
       - jaeger
-      - interceptor
+      - app-interceptor
     build:
       context: ../../..
       dockerfile: Dockerfile
@@ -294,7 +294,7 @@ services:
   go-auto-audit-service:
     depends_on:
       - jaeger
-      - audit-service
+      - app-audit-service
     build:
       context: ../../..
       dockerfile: Dockerfile
@@ -313,7 +313,7 @@ services:
   go-auto-warehouse:
     depends_on:
       - jaeger
-      - warehouse
+      - app-warehouse
     build:
       context: ../../..
       dockerfile: Dockerfile
@@ -332,7 +332,7 @@ services:
   go-auto-customer:
     depends_on:
       - jaeger
-      - customer
+      - app-customer
     build:
       context: ../../..
       dockerfile: Dockerfile

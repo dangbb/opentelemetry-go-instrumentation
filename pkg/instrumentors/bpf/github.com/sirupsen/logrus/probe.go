@@ -31,10 +31,12 @@ import (
 	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/rand"
 	"golang.org/x/sys/unix"
 	"golang.org/x/xerrors"
 	"os"
 	"sync"
+	"time"
 
 	"go.opentelemetry.io/auto/pkg/inject"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpffs"
@@ -166,6 +168,8 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 }
 
 func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
+	rand.Seed(uint64(time.Now().UnixNano()))
+
 	logger := log.Logger.WithName(instrumentorName)
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -215,6 +219,40 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				event.Goid)
 
 			eventsChan <- i.convertEvent(&event)
+
+			padEvent := event
+			padEvent.ParentSpanContext = event.SpanContext
+			padEvent.SpanContext.TraceID = genRandomTraceId()
+			padEvent.SpanContext.SpanID = genRandomSpanId()
+			padEvent.Goid = 990
+
+			eventsChan <- i.convertEvent(&padEvent)
+
+			fmt.Printf("Generate padd trace lib %s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+				i.LibraryName(),
+				padEvent.ParentSpanContext.TraceID.String(),
+				padEvent.ParentSpanContext.SpanID.String(),
+				padEvent.SpanContext.TraceID.String(),
+				padEvent.SpanContext.SpanID.String(),
+				padEvent.CurThread,
+				padEvent.Goid)
+
+			padEvent2 := event
+			padEvent2.ParentSpanContext = padEvent.SpanContext
+			padEvent2.SpanContext.TraceID = genRandomTraceId()
+			padEvent2.SpanContext.SpanID = genRandomSpanId()
+			padEvent2.Goid = 992
+
+			eventsChan <- i.convertEvent(&padEvent2)
+
+			fmt.Printf("Generate padd 2 trace lib %s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+				i.LibraryName(),
+				padEvent2.ParentSpanContext.TraceID.String(),
+				padEvent2.ParentSpanContext.SpanID.String(),
+				padEvent2.SpanContext.TraceID.String(),
+				padEvent2.SpanContext.SpanID.String(),
+				padEvent2.CurThread,
+				padEvent2.Goid)
 		}
 	}()
 
@@ -324,4 +362,30 @@ func (i *Instrumentor) Close() {
 	if i.bpfObjects != nil {
 		i.bpfObjects.Close()
 	}
+}
+
+func genRandomSpanId() trace.SpanID {
+	buff := trace.SpanID{}
+	for i := 0; i < 2; i++ {
+		random := rand.Int31()
+		buff[(4 * i)] = byte((random >> 24) & 0xFF)
+		buff[(4*i)+1] = byte((random >> 16) & 0xFF)
+		buff[(4*i)+2] = byte((random >> 8) & 0xFF)
+		buff[(4*i)+3] = byte(random & 0xFF)
+	}
+
+	return buff
+}
+
+func genRandomTraceId() trace.TraceID {
+	buff := trace.TraceID{}
+	for i := 0; i < 4; i++ {
+		random := rand.Int31()
+		buff[(4 * i)] = byte((random >> 24) & 0xFF)
+		buff[(4*i)+1] = byte((random >> 16) & 0xFF)
+		buff[(4*i)+2] = byte((random >> 8) & 0xFF)
+		buff[(4*i)+3] = byte(random & 0xFF)
+	}
+
+	return buff
 }
