@@ -235,7 +235,7 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 		defer wg.Done()
 		var event gmap.GMapEvent
 		for {
-			record, err := g.eventsReader.Read()
+			record, err := g.gmapEventReader.Read()
 			if err != nil {
 				if errors.Is(err, perf.ErrClosed) {
 					return
