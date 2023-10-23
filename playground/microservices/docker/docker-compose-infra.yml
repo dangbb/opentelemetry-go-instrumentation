@@ -1,6 +1,17 @@
 version: '3.7'
 
 services:
+  redis:
+    image: redis:6.0-alpine
+    container_name: redis
+    restart: always
+    volumes:
+      - '${VOLUME_FOLDER}/redis:/data'
+    ports:
+      - '${REDIS_PORT}:6379'
+    networks:
+      - service-mesh
+
   audit-mysql:
     image: mysql:8
     container_name: audit-mysql

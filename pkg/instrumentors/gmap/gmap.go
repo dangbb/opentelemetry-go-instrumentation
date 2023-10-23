@@ -1,6 +1,9 @@
 package gmap
 
 import (
+	context2 "context"
+	"fmt"
+	"go.opentelemetry.io/auto/pkg/instrumentors/interservice"
 	"sync"
 
 	"go.opentelemetry.io/auto/pkg/instrumentors/constant"
@@ -121,9 +124,32 @@ func RegisterSpan(event GMapEvent, lib string) {
 	// if goroutine id already taken, then skip
 	sc, ok := GetGoId2Sc(goid)
 	if ok {
+		err := interservice.SetMappingTraceID(context2.Background(), event.Sc.TraceID, sc.TraceID)
+		if err != nil {
+			fmt.Printf("Error when get cache for trace ID %s\n", event.Sc.TraceID.String())
+		} else {
+			fmt.Printf("Init interservice traceID mapping for: %s - origin: %s\n",
+				event.Sc.TraceID.String(),
+				sc.TraceID.String())
+		}
+
 		event.Sc.TraceID = sc.TraceID
 		return
 	} else {
+		// get pid of current event
+		pid, err := interservice.GetMappingTraceID(context2.Background(), event.Sc.TraceID)
+		if err != nil {
+			fmt.Printf("Error when get cache for trace ID %s\n", event.Sc.TraceID.String())
+		} else {
+			if pid.IsValid() {
+				fmt.Printf("Assign new interservice traceID: %s - replace: %s\n",
+					pid.String(),
+					event.Sc.TraceID.String())
+
+				event.Sc.TraceID = pid
+			}
+		}
+
 		_, ok := GetAncestorSc(goid)
 		if ok {
 		} else {

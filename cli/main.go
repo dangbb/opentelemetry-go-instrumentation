@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+	"go.opentelemetry.io/auto/pkg/instrumentors/interservice"
 	"os"
 	"os/signal"
 	"syscall"
@@ -33,6 +34,8 @@ func main() {
 		fmt.Printf("could not init logger: %s\n", err)
 		os.Exit(1)
 	}
+
+	interservice.InitRedisConnection()
 
 	log.Logger.V(0).Info("starting Go OpenTelemetry Agent ...")
 	// examine target -

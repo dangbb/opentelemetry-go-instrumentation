@@ -1,6 +1,19 @@
 version: '3.7'
 
 services:
+  shared-redis:
+    image: redis:6.0-alpine
+    container_name: shared-redis
+    hostname: shared-redis
+    restart: always
+    volumes:
+      - '${VOLUME_FOLDER}/redis:/data'
+      - ./shared/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - '${REDIS_PORT}:6379'
+    networks:
+      - service-mesh
+
   audit-mysql:
     image: mysql:8
     container_name: audit-mysql
@@ -282,6 +295,8 @@ services:
     privileged: true
     pid: "host"
     environment:
+      - REDIS_ADDRESS=shared-redis:6379
+      - REDIS_PASSWORD=
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_GO_AUTO_TARGET_EXE=/app/interceptor
       - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
@@ -301,6 +316,8 @@ services:
     privileged: true
     pid: "host"
     environment:
+      - REDIS_ADDRESS=shared-redis:6379
+      - REDIS_PASSWORD=
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_GO_AUTO_TARGET_EXE=/app/audit
       - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
@@ -320,6 +337,8 @@ services:
     privileged: true
     pid: "host"
     environment:
+      - REDIS_ADDRESS=shared-redis:6379
+      - REDIS_PASSWORD=
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_GO_AUTO_TARGET_EXE=/app/warehouse
       - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
@@ -339,6 +358,8 @@ services:
     privileged: true
     pid: "host"
     environment:
+      - REDIS_ADDRESS=localhost:6379
+      - REDIS_PASSWORD=
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_GO_AUTO_TARGET_EXE=/app/customer
       - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
