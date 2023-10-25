@@ -152,12 +152,30 @@ int uprobe_HttpClient_Do(struct pt_regs *ctx) {
     void *context_ptr_val = 0;
     bpf_probe_read(&context_ptr_val, sizeof(context_ptr_val), context_ptr);
     struct span_context *parent_span_ctx = get_parent_span_context(context_ptr_val);
-    if (parent_span_ctx != NULL) {
-        bpf_probe_read(&httpReq.psc, sizeof(httpReq.psc), parent_span_ctx);
+
+    // priority same-goroutine sc
+    u64 goid = get_current_goroutine();
+    void* same_goroutine_sc_ptr = bpf_map_lookup_elem(&goroutine_sc_map, &goid);
+
+    if (same_goroutine_sc_ptr != NULL) {
+        struct span_context sc = {};
+        bpf_probe_read(&sc, sizeof(sc), same_goroutine_sc_ptr);
+
+        httpReq.psc = sc;
         copy_byte_arrays(httpReq.psc.TraceID, httpReq.sc.TraceID, TRACE_ID_SIZE);
         generate_random_bytes(httpReq.sc.SpanID, SPAN_ID_SIZE);
+
+        bpf_printk("Get traceheader from samesite goroutine");
     } else {
-        httpReq.sc = generate_span_context();
+        if (parent_span_ctx != NULL) {
+            bpf_probe_read(&httpReq.psc, sizeof(httpReq.psc), parent_span_ctx);
+            copy_byte_arrays(httpReq.psc.TraceID, httpReq.sc.TraceID, TRACE_ID_SIZE);
+            generate_random_bytes(httpReq.sc.SpanID, SPAN_ID_SIZE);
+
+            bpf_printk("Get traceheader from parent ctx");
+        } else {
+            httpReq.sc = generate_span_context();
+        }
     }
 
     void *method_ptr = 0;

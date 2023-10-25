@@ -15,11 +15,13 @@ import (
 type bpfGmapT struct {
 	Key   uint64
 	Value uint64
-	Sc    struct {
-		TraceID [16]uint8
-		SpanID  [8]uint8
-	}
-	Type uint64
+	Sc    bpfSpanContext
+	Type  uint64
+}
+
+type bpfSpanContext struct {
+	TraceID [16]uint8
+	SpanID  [8]uint8
 }
 
 // loadBpf returns the embedded CollectionSpec for bpf.
@@ -72,6 +74,7 @@ type bpfProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
 	GmapEvents     *ebpf.MapSpec `ebpf:"gmap_events"`
+	GoroutineScMap *ebpf.MapSpec `ebpf:"goroutine_sc_map"`
 	GoroutinesMap  *ebpf.MapSpec `ebpf:"goroutines_map"`
 	PlaceholderMap *ebpf.MapSpec `ebpf:"placeholder_map"`
 }
@@ -96,6 +99,7 @@ func (o *bpfObjects) Close() error {
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
 	GmapEvents     *ebpf.Map `ebpf:"gmap_events"`
+	GoroutineScMap *ebpf.Map `ebpf:"goroutine_sc_map"`
 	GoroutinesMap  *ebpf.Map `ebpf:"goroutines_map"`
 	PlaceholderMap *ebpf.Map `ebpf:"placeholder_map"`
 }
@@ -103,6 +107,7 @@ type bpfMaps struct {
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.GmapEvents,
+		m.GoroutineScMap,
 		m.GoroutinesMap,
 		m.PlaceholderMap,
 	)

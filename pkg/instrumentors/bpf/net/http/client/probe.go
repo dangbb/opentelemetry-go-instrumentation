@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
-	"golang.org/x/xerrors"
 	"os"
 	"sync"
 
@@ -202,6 +201,15 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
+			fmt.Printf("%s - before - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+				h.LibraryName(),
+				event.ParentSpanContext.TraceID.String(),
+				event.ParentSpanContext.SpanID.String(),
+				event.SpanContext.TraceID.String(),
+				event.SpanContext.SpanID.String(),
+				event.CurThread,
+				event.Goid)
+
 			gmap.EnrichSpan(&event, event.Goid, h.LibraryName())
 
 			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
@@ -239,20 +247,6 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				logger.Error(err, "error parsing perf event")
 				continue
 			}
-
-			fmt.Printf("Server get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
-				event.Type,
-				event.Key,
-				event.Value,
-				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String())
-
-			if event.Type != gmap.GoId2Sc {
-				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")
-				continue
-			}
-
-			gmap.RegisterSpan(event, h.LibraryName())
 		}
 	}()
 

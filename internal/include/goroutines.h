@@ -11,6 +11,14 @@ struct {
 	__uint(pinning, LIBBPF_PIN_BY_NAME);
 } goroutines_map SEC(".maps");
 
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __type(key, u64);
+    __type(value, struct span_context);
+    __uint(max_entries, MAX_SYSTEM_THREADS);
+    __uint(pinning, LIBBPF_PIN_BY_NAME);
+} goroutine_sc_map SEC(".maps");
+
 
 u64 get_current_goroutine() {
     u64 current_thread = bpf_get_current_pid_tgid();

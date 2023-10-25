@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
-	"golang.org/x/xerrors"
 	"os"
 	"sync"
 
@@ -242,20 +241,6 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				logger.Error(err, "error parsing perf event")
 				continue
 			}
-
-			fmt.Printf("Server get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
-				event.Type,
-				event.Key,
-				event.Value,
-				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String())
-
-			if event.Type != gmap.GoId2Sc {
-				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")
-				continue
-			}
-
-			gmap.RegisterSpan(event, g.LibraryName())
 		}
 	}()
 

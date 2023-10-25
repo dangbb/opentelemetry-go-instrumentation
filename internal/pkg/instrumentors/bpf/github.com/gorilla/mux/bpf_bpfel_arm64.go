@@ -78,6 +78,7 @@ type bpfProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
 	Events           *ebpf.MapSpec `ebpf:"events"`
+	GoroutineScMap   *ebpf.MapSpec `ebpf:"goroutine_sc_map"`
 	GoroutinesMap    *ebpf.MapSpec `ebpf:"goroutines_map"`
 	HttpEvents       *ebpf.MapSpec `ebpf:"http_events"`
 	TrackedSpans     *ebpf.MapSpec `ebpf:"tracked_spans"`
@@ -104,6 +105,7 @@ func (o *bpfObjects) Close() error {
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
 	Events           *ebpf.Map `ebpf:"events"`
+	GoroutineScMap   *ebpf.Map `ebpf:"goroutine_sc_map"`
 	GoroutinesMap    *ebpf.Map `ebpf:"goroutines_map"`
 	HttpEvents       *ebpf.Map `ebpf:"http_events"`
 	TrackedSpans     *ebpf.Map `ebpf:"tracked_spans"`
@@ -113,6 +115,7 @@ type bpfMaps struct {
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.Events,
+		m.GoroutineScMap,
 		m.GoroutinesMap,
 		m.HttpEvents,
 		m.TrackedSpans,

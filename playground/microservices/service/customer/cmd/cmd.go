@@ -20,8 +20,8 @@ func main() {
 		fmt.Fprintf(w, "Hello, %q\n", html.EscapeString(r.URL.Path))
 	})
 
-	logrus.Infof("Start customer service at: 0.0.0.0:%d", config.HttpPort)
-	if err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", config.HttpPort), nil); err != nil {
-		logrus.Fatalf("can listen to port %d\n", config.HttpPort)
+	logrus.Infof("Start customer service at: 0.0.0.0:%d", 8093)
+	if err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", 8093), nil); err != nil {
+		logrus.Fatalf("can listen to port %d\n", 8093)
 	}
 }

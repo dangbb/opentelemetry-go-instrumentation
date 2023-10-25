@@ -176,7 +176,19 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     void *key = get_consistent_key(ctx, msg_ptr);
     u64 key64 = (u64)key;
 
-    req.sc = generate_span_context();
+    u64 goid = get_current_goroutine();
+    void* same_goroutine_sc_ptr = bpf_map_lookup_elem(&goroutine_sc_map, &goid);
+
+    if (same_goroutine_sc_ptr != NULL) {
+        struct span_context sc = {};
+        bpf_probe_read(&sc, sizeof(sc), same_goroutine_sc_ptr);
+
+        req.psc = sc;
+        copy_byte_arrays(req.psc.TraceID, req.sc.TraceID, TRACE_ID_SIZE);
+        generate_random_bytes(req.sc.SpanID, SPAN_ID_SIZE);
+    } else {
+        req.sc = generate_span_context();
+    }
 
     u64 cur_thread = bpf_get_current_pid_tgid();
 

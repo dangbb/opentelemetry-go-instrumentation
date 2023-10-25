@@ -1,0 +1,116 @@
+version: '3.7'
+
+services:
+  audit-mysql:
+    image: mysql:8
+    container_name: audit-mysql
+    hostname: audit-mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password --sql-mode=
+    env_file:
+      - .env
+    volumes:
+      - '${VOLUME_FOLDER}/audit/mysql:/var/lib/mysql'
+    restart: unless-stopped
+    ports:
+      - '${AUDIT_DB_PORT}:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: ${AUDIT_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${AUDIT_DB_NAME}
+      MYSQL_USER: ${AUDIT_DB_USERNAME}
+      MYSQL_PASSWORD: ${AUDIT_DB_PASSWORD}
+    networks:
+      - service-mesh-infra
+
+  warehouse-zoo:
+    image: zookeeper:3.4.9
+    hostname: warehouse-zoo
+    container_name: warehouse-zoo
+    restart: unless-stopped
+    ports:
+      - "${ZOO_KEEPER_PORT}:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_PORT: 2181
+      ZOO_SERVERS: server.1=warehouse-zoo:2888:3888
+    volumes:
+      - '${VOLUME_FOLDER}/zoo/data:/data'
+      - '${VOLUME_FOLDER}/zoo/datalog:/datalog'
+    networks:
+      - service-mesh-infra
+
+  kafka:
+    image: confluentinc/cp-kafka:5.5.0
+    hostname: kafka
+    container_name: kafka
+    restart: unless-stopped
+    ports:
+      - "${KAFKA_PORT}:9092"
+      - "9093"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9093, EXTERNAL://localhost:9092
+      KAFKA_LISTENERS: INTERNAL://:9093,EXTERNAL://:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: warehouse-zoo:2181
+      KAFKA_BROKER_ID: 1
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - '${VOLUME_FOLDER}/kafka:/var/lib/kafka/data'
+    depends_on:
+      - warehouse-zoo
+    networks:
+      - service-mesh-infra
+
+  warehouse-kafka-ui:
+    image: provectuslabs/kafka-ui
+    restart: unless-stopped
+    ports:
+      - '${KAFKA_UI_PORT}:8080'
+    environment:
+      KAFKA_CLUSTERS_0_NAME: warehouse
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+      KAFKA_CLUSTERS_0_ZOOKEEPER: warehouse-zoo:2181
+    depends_on:
+      - kafka
+      - warehouse-schema-registry
+    networks:
+      - service-mesh-infra
+
+  warehouse-schema-registry:
+    image: confluentinc/cp-schema-registry:6.0.1
+    hostname: warehouse-schema-registry
+    container_name: warehouse-schema-registry
+    restart: on-failure
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: warehouse-schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9093 # Kafka Broker
+    depends_on:
+      - warehouse-zoo
+      - kafka
+    ports:
+      - '${SCHEMA_REGISTRY_PORT}:8081'
+    networks:
+      - service-mesh-infra
+
+  # observability service
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=debug
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    restart: unless-stopped
+
+networks:
+  service-mesh-infra:
+    driver: bridge

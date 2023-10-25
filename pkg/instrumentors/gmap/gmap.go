@@ -68,8 +68,6 @@ func SetGoPc2GoId(key, value uint64) {
 	defer goPc2PGoIdLock.Unlock()
 
 	goPc2PGoId[key] = value
-
-	fmt.Printf("Map pc 2 pgoid %d to %d\n", key, value)
 }
 
 func GetGoPc2GoId(key uint64) (uint64, bool) {
@@ -85,7 +83,6 @@ func SetGoId2PGoId(key, value uint64) {
 	defer goId2PGoIdLock.Unlock()
 
 	goId2PGoId[key] = value
-	fmt.Printf("Create egde %d - %d\n", key, value)
 }
 
 func GetGoId2PGoId(key uint64) (uint64, bool) {
@@ -123,22 +120,22 @@ func RegisterSpan(event GMapEvent, lib string) {
 	goid := event.Key
 
 	// if goroutine id already taken, then skip
-	sc, ok := GetGoId2Sc(goid)
+	_, ok := GetGoId2Sc(goid)
 	if ok {
-		event.Sc.TraceID = sc.TraceID
-		fmt.Printf("sc for goid %d exist - %s\n", goid, lib)
-		return
+		fmt.Printf("Replace goid %d, with pid: %s - sid: %s",
+			goid,
+			event.Sc.TraceID,
+			event.Sc.SpanID)
+		SetGoId2Sc(goid, event.Sc)
 	} else {
 		_, ok := GetAncestorSc(goid)
 		if ok {
-			fmt.Printf("logrus found ancestor for %d - %s\n", goid, lib)
 		} else {
-			SetGoId2Sc(goid, event.Sc)
-			fmt.Printf("Type 4 %s set sc for %d - trace id: %s - span id: %s\n",
-				lib,
+			fmt.Printf("Set goid %d, with pid: %s - sid: %s\n",
 				goid,
 				event.Sc.TraceID,
 				event.Sc.SpanID)
+			SetGoId2Sc(goid, event.Sc)
 		}
 	}
 }
@@ -147,21 +144,17 @@ func EnrichSpan(event context.IBaseSpan, goid uint64, lib string) {
 	currentSc := event.GetSpanContext()
 	sc, ok := GetGoId2Sc(goid)
 	if ok { // same goroutine sc exist
-		currentSc.TraceID = sc.TraceID
-		event.SetSpanContext(currentSc)
-		event.SetParentSpanContext(sc)
-		fmt.Printf("sc for goid %d exist - %s\n", goid, lib)
+		if currentSc.TraceID.String() != sc.TraceID.String() {
+			currentSc.TraceID = sc.TraceID
+			event.SetSpanContext(currentSc)
+			event.SetParentSpanContext(sc)
+		}
 	} else {
 		psc, ok := GetAncestorSc(goid)
-		fmt.Printf("get from ancestor for %d - %s\n", goid, lib)
 		if ok { // parent goroutine sc exist
 			event.SetParentSpanContext(psc)
 			currentSc.TraceID = psc.TraceID
 			event.SetSpanContext(currentSc)
-			fmt.Printf("ancestor exist %s. take value of ancestor. TraceID: %s - SpanID: %s\n",
-				lib,
-				psc.TraceID.String(),
-				psc.SpanID.String())
 		}
 	}
 }

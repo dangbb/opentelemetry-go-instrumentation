@@ -83,6 +83,7 @@ volatile const u64 headerFrame_hf_pos;
 SEC("uprobe/ClientConn_Invoke")
 int uprobe_ClientConn_Invoke(struct pt_regs *ctx)
 {
+    bpf_printk("Get into probe of ClientConn_Invoke, bore %d", 1);
     // positions
     u64 clientconn_pos = 1;
     u64 context_pos = 3;
@@ -140,12 +141,14 @@ UPROBE_RETURN(ClientConn_Invoke, struct grpc_request_t, 3, 0, grpc_events, event
 SEC("uprobe/loopyWriter_headerHandler")
 int uprobe_LoopyWriter_HeaderHandler(struct pt_regs *ctx)
 {
+    bpf_printk("Get into probe of loopyWriter_headerHandler");
     void *headerFrame_ptr = get_argument(ctx, 2);
     u32 stream_id = 0;
     bpf_probe_read(&stream_id, sizeof(stream_id), (void *)(headerFrame_ptr + (headerFrame_streamid_pos)));
     void *sc_ptr = bpf_map_lookup_elem(&streamid_to_span_contexts, &stream_id);
     if (sc_ptr == NULL)
     {
+        bpf_printk("Not found sc ptr. Skip inject header.");
         return 0;
     }
 
@@ -184,6 +187,7 @@ SEC("uprobe/http2Client_NewStream")
 // func (t *http2Client) NewStream(ctx context.Context, callHdr *CallHdr) (*Stream, error)
 int uprobe_http2Client_NewStream(struct pt_regs *ctx)
 {
+    bpf_printk("Get into probe of uprobe_http2Client_NewStream");
     void *context_ptr = get_argument(ctx, 3);
     void *context_ptr_val = 0;
     bpf_probe_read(&context_ptr_val, sizeof(context_ptr_val), context_ptr);
@@ -194,6 +198,7 @@ int uprobe_http2Client_NewStream(struct pt_regs *ctx)
 
     struct span_context *current_span_context = get_parent_span_context(context_ptr_val);
     if (current_span_context != NULL) {
+        bpf_printk("set stream id to span context for %d", nextid);
         bpf_map_update_elem(&streamid_to_span_contexts, &nextid, current_span_context, 0);
     }
 

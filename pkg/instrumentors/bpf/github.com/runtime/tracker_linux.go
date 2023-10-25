@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/perf"
@@ -146,7 +145,6 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 		case gmap.GoId2GoPc:
 			pgoid, ok := gmap.GetGoPc2GoId(event.Value)
 			if !ok {
-				fmt.Printf("Not found pgoid for gopc %d\n", pgoid)
 				continue
 			}
 			gmap.SetGoId2PGoId(event.Key, pgoid)

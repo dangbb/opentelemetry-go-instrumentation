@@ -57,6 +57,14 @@ struct
     __uint(max_entries, MAX_CONCURRENT);
 } streamid_to_span_contexts SEC(".maps");
 
+struct
+{
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __type(key, u64);
+    __type(value, struct span_context);
+    __uint(max_entries, MAX_CONCURRENT);
+} internal_goid_to_span_contexts SEC(".maps");
+
 struct headers_buff
 {
     unsigned char buff[MAX_HEADERS_BUFF_SIZE];
@@ -86,6 +94,7 @@ volatile const u64 headerFrame_hf_pos;
 SEC("uprobe/ClientConn_Invoke")
 int uprobe_ClientConn_Invoke(struct pt_regs *ctx)
 {
+    bpf_printk("Invoke uprobe_ClientConn_Invoke");
     // positions
     u64 clientconn_pos = 1;
     u64 context_pos = 3;
@@ -112,20 +121,45 @@ int uprobe_ClientConn_Invoke(struct pt_regs *ctx)
     target_size = target_size < target_len ? target_size : target_len;
     bpf_probe_read(&grpcReq.target, target_size, target_ptr);
 
+    u64 goid = get_current_goroutine();
     void *context_ptr = get_argument(ctx, context_pos);
     void *context_ptr_val = 0;
     bpf_probe_read(&context_ptr_val, sizeof(context_ptr_val), context_ptr);
     struct span_context *parent_span_ctx = get_parent_span_context(context_ptr_val);
-    if (parent_span_ctx != NULL)
-    {
-        bpf_probe_read(&grpcReq.psc, sizeof(grpcReq.psc), parent_span_ctx);
+    // Prioritize same-goroutine sc
+    void* same_goroutine_sc_ptr = bpf_map_lookup_elem(&goroutine_sc_map, &goid);
+
+    if (same_goroutine_sc_ptr != NULL) {
+        struct span_context sc = {};
+        bpf_probe_read(&sc, sizeof(sc), same_goroutine_sc_ptr);
+
+        grpcReq.psc = sc;
         copy_byte_arrays(grpcReq.psc.TraceID, grpcReq.sc.TraceID, TRACE_ID_SIZE);
         generate_random_bytes(grpcReq.sc.SpanID, SPAN_ID_SIZE);
+        bpf_printk("grpc client using same goroutine sc");
+    } else {
+        if (parent_span_ctx != NULL)
+        {
+            bpf_probe_read(&grpcReq.psc, sizeof(grpcReq.psc), parent_span_ctx);
+            copy_byte_arrays(grpcReq.psc.TraceID, grpcReq.sc.TraceID, TRACE_ID_SIZE);
+            generate_random_bytes(grpcReq.sc.SpanID, SPAN_ID_SIZE);
+            bpf_printk("grpc client using parent ctx");
+        } else {
+            grpcReq.sc = generate_span_context();
+        }
     }
-    else
-    {
-        grpcReq.sc = generate_span_context();
-    }
+
+    // Store to inject later
+    bpf_map_update_elem(&internal_goid_to_span_contexts, &goid, &grpcReq.sc, 0);
+
+    // send type 3 event
+    struct gmap_t event4 = {};
+
+    event4.key = 1;
+    event4.sc = grpcReq.sc;
+    event4.type = 4;
+
+    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event4, sizeof(event4));
 
     // Get key
     void *key = get_consistent_key(ctx, context_ptr);
@@ -143,7 +177,6 @@ int uprobe_ClientConn_Invoke(struct pt_regs *ctx)
     event3.sc = grpcReq.sc;
     event3.type = GOID_SC;
 
-    bpf_printk("Type 3, server goid %d", grpcReq.goid);
     bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 
     // Write event
@@ -180,6 +213,15 @@ int uprobe_LoopyWriter_HeaderHandler(struct pt_regs *ctx)
     struct span_context current_span_context = {};
     bpf_probe_read(&current_span_context, sizeof(current_span_context), sc_ptr);
 
+    // send type 3 event
+    struct gmap_t event4 = {};
+
+    event4.key = 2;
+    event4.sc = current_span_context;
+    event4.type = 4;
+
+    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event4, sizeof(event4));
+
     char tp_key[11] = "traceparent";
     struct go_string key_str = write_user_go_string(tp_key, sizeof(tp_key));
     if (key_str.len == 0) {
@@ -202,6 +244,8 @@ SEC("uprobe/http2Client_NewStream")
 // func (t *http2Client) NewStream(ctx context.Context, callHdr *CallHdr) (*Stream, error)
 int uprobe_http2Client_NewStream(struct pt_regs *ctx)
 {
+    u64 goid = get_current_goroutine();
+
     void *context_ptr = get_argument(ctx, 3);
     void *context_ptr_val = 0;
     bpf_probe_read(&context_ptr_val, sizeof(context_ptr_val), context_ptr);
@@ -211,8 +255,16 @@ int uprobe_http2Client_NewStream(struct pt_regs *ctx)
     bpf_probe_read(&nextid, sizeof(nextid), (void *)(httpclient_ptr + (httpclient_nextid_pos)));
 
     struct span_context *current_span_context = get_parent_span_context(context_ptr_val);
-    if (current_span_context != NULL) {
-        bpf_map_update_elem(&streamid_to_span_contexts, &nextid, current_span_context, 0);
+
+    // prioritize internal span context
+    void *internal_span_context = bpf_map_lookup_elem(&internal_goid_to_span_contexts, &goid);
+    if (internal_span_context != NULL) {
+        bpf_map_update_elem(&streamid_to_span_contexts, &nextid, internal_span_context, 0);
+        bpf_map_delete_elem(&internal_goid_to_span_contexts, &goid);
+    } else {
+        if (current_span_context != NULL) {
+            bpf_map_update_elem(&streamid_to_span_contexts, &nextid, current_span_context, 0);
+        }
     }
 
     return 0;

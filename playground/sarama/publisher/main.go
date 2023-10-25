@@ -29,6 +29,8 @@ func newSyncPublisher() (sarama.SyncProducer, error) {
 
 	brokers := []string{"localhost:9092"}
 
+	logrus.Info("Broker at localhost:9092")
+
 	return sarama.NewSyncProducer(brokers, cfg)
 }
 

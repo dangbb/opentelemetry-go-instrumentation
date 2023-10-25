@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
-	"golang.org/x/xerrors"
 	"os"
 	"strings"
 	"sync"
@@ -268,19 +267,13 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			fmt.Printf("grpc client get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
-				event.Type,
-				event.Key,
-				event.Value,
-				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String())
-
-			if event.Type != gmap.GoId2Sc {
-				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")
-				continue
+			if event.Type == 4 {
+				fmt.Printf("%s - type 4 DEBUG event - write trace sc.tid: %s - sc.sid: %s - key: %d\n",
+					g.LibraryName(),
+					event.Sc.TraceID.String(),
+					event.Sc.SpanID.String(),
+					event.Key)
 			}
-
-			gmap.RegisterSpan(event, g.LibraryName())
 		}
 	}()
 

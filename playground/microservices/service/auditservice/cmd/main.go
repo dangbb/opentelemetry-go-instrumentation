@@ -7,7 +7,6 @@ import (
 	"microservice/config"
 	"microservice/pkg/migrate"
 	"microservice/service/auditservice/serve"
-	"time"
 )
 
 func main() {
@@ -32,8 +31,8 @@ func main() {
 	case "migrate <command>":
 		switch cliConfig.Migrate.Command {
 		case "up":
-			time.Sleep(5 * time.Second)
-			migrate.Up(cliConfig.MySqlConfig.GetDsn(), cliConfig.MigrationFolder)
+			migrate.Up("username:password@tcp(localhost:3320)/dbname?charset=utf8mb4&parseTime=True",
+				"/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/microservices/service/auditservice/migration")
 		}
 	}
 }

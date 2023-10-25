@@ -126,13 +126,31 @@ int uprobe_server_handleStream(struct pt_regs *ctx)
     bpf_printk("Type 3, server goid %d", grpcReq.goid);
     bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 
+    bpf_map_update_elem(&goroutine_sc_map, &grpcReq.goid, &grpcReq.sc, 0);
+
     // Write event
     bpf_map_update_elem(&grpc_events, &key, &grpcReq, 0);
     start_tracking_span(ctx_iface, &grpcReq.sc);
     return 0;
 }
 
-UPROBE_RETURN(server_handleStream, struct grpc_request_t, 4, stream_ctx_pos, grpc_events, events)
+SEC("uprobe/server_handleStream")
+int uprobe_server_handleStream_Returns(struct pt_regs *ctx) {
+    u64 request_pos = 4;
+    void *req_ptr = get_argument(ctx, request_pos);
+    void *key = get_consistent_key(ctx, (void *)(req_ptr + stream_ctx_pos));
+    void *req_ptr_map = bpf_map_lookup_elem(&grpc_events, &key);
+    struct grpc_request_t tmpReq = {};
+    bpf_probe_read(&tmpReq, sizeof(tmpReq), req_ptr_map);
+    tmpReq.end_time = bpf_ktime_get_ns();
+    bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));
+    bpf_map_delete_elem(&grpc_events, &key);
+    stop_tracking_span(&tmpReq.sc);
+
+    bpf_map_delete_elem(&goroutine_sc_map, &tmpReq.goid);
+
+    return 0;
+}
 
 // func (d *decodeState) decodeHeader(frame *http2.MetaHeadersFrame) error
 SEC("uprobe/decodeState_decodeHeader")

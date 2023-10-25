@@ -3,6 +3,7 @@ package serve
 import (
 	"context"
 	"fmt"
+	"google.golang.org/grpc/metadata"
 	"net"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -26,6 +27,18 @@ type AuditServer struct {
 func (s *AuditServer) AuditSend(ctx context.Context, in *pb.AuditSendRequest) (*pb.AuditSendResponse, error) {
 	logrus.Info("Receive audit")
 
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		logrus.Warnf("Cannot parse metadata")
+	} else {
+		traceheader := md.Get("traceparent")
+		if len(traceheader) > 0 {
+			logrus.Infof("Value of traceparent: %s", traceheader[0])
+		} else {
+			logrus.Warnf("Traceparent not found")
+		}
+	}
+
 	// send to mysql
 	if err := s.db.CreateAudit(ctx, service.Audit{
 		ServiceName: in.ServiceName,
@@ -44,12 +57,13 @@ func (s *AuditServer) AuditSend(ctx context.Context, in *pb.AuditSendRequest) (*
 }
 
 func RunAuditServer(cfg config.Config) {
-	db, err := gorm.Open(mysql.Open(cfg.MySqlConfig.GetDsn()), &gorm.Config{
+	dns := "username:password@tcp(localhost:3320)/dbname?charset=utf8mb4&parseTime=True"
+	db, err := gorm.Open(mysql.Open(dns), &gorm.Config{
 		Logger:                                   logger.Default,
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", cfg.GrpcPort))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", 8091))
 	if err != nil {
 		logrus.Fatalf("fail to listen to port %d: %s\n", cfg.GrpcPort, err)
 	}

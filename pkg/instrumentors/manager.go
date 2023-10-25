@@ -20,20 +20,19 @@ package instrumentors
 import (
 	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/IBM/sarama"
+	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/gin-gonic/gin"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/runtime"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/sirupsen/logrus"
+	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/google/golang/org/grpc"
+	grpcServer "go.opentelemetry.io/auto/pkg/instrumentors/bpf/google/golang/org/grpc/server"
 
-	"go.opentelemetry.io/auto/pkg/instrumentors/allocator"                                    // nolint:staticcheck  // Atomic deprecation.
-	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/gin-gonic/gin"                 // nolint:staticcheck  // Atomic deprecation.
-	gorillaMux "go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/gorilla/mux"        // nolint:staticcheck  // TODO: remove in #263
-	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/google/golang/org/grpc"                   // nolint:staticcheck  // Atomic deprecation.
-	grpcServer "go.opentelemetry.io/auto/pkg/instrumentors/bpf/google/golang/org/grpc/server" // nolint:staticcheck  // Atomic deprecation.
-	httpClient "go.opentelemetry.io/auto/pkg/instrumentors/bpf/net/http/client"               // nolint:staticcheck  // Atomic deprecation.
-	httpServer "go.opentelemetry.io/auto/pkg/instrumentors/bpf/net/http/server"               // nolint:staticcheck  // Atomic deprecation.
-	"go.opentelemetry.io/auto/pkg/instrumentors/events"                                       // nolint:staticcheck  // Atomic deprecation.
-	"go.opentelemetry.io/auto/pkg/log"                                                        // nolint:staticcheck  // Atomic deprecation.
-	"go.opentelemetry.io/auto/pkg/opentelemetry"                                              // nolint:staticcheck  // Atomic deprecation.
-	"go.opentelemetry.io/auto/pkg/process"                                                    // nolint:staticcheck  // Atomic deprecation.
+	"go.opentelemetry.io/auto/pkg/instrumentors/allocator"                      // nolint:staticcheck  // Atomic deprecation.
+	httpClient "go.opentelemetry.io/auto/pkg/instrumentors/bpf/net/http/client" // nolint:staticcheck  // Atomic deprecation.
+	httpServer "go.opentelemetry.io/auto/pkg/instrumentors/bpf/net/http/server" // nolint:staticcheck  // Atomic deprecation.
+	"go.opentelemetry.io/auto/pkg/instrumentors/events"                         // nolint:staticcheck  // Atomic deprecation.
+	"go.opentelemetry.io/auto/pkg/log"                                          // nolint:staticcheck  // Atomic deprecation.
+	"go.opentelemetry.io/auto/pkg/opentelemetry"                                // nolint:staticcheck  // Atomic deprecation.
+	"go.opentelemetry.io/auto/pkg/process"                                      // nolint:staticcheck  // Atomic deprecation.
 )
 
 var (
@@ -121,7 +120,8 @@ func registerInstrumentors(m *Manager) error {
 		grpcServer.New(),
 		httpServer.New(),
 		httpClient.New(),
-		gorillaMux.New(),
+		// deprecated, for the sake of goroutine handler for net/http
+		//gorillaMux.New(),
 		gin.New(),
 		// New auto instrumentor for thesis
 		logrus.New(),

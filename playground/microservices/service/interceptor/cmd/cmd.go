@@ -25,7 +25,7 @@ func main() {
 	logrus.SetLevel(logrus.DebugLevel)
 
 	// craft audit service
-	conn, err := grpc.Dial(cfg.AuditAddress, grpc.WithTransportCredentials(
+	conn, err := grpc.Dial("localhost:8091", grpc.WithTransportCredentials(
 		insecure.NewCredentials()))
 	if err != nil {
 		logrus.Fatalf("can establish grpc client conn %s", err.Error())
@@ -55,7 +55,7 @@ func main() {
 		logrus.Debugf("Receiver request: %s", requestBodyStr)
 
 		// send request to warehouse service
-		resp, err := http.Post(fmt.Sprintf("%s%s", cfg.WarehouseAddress, "/insert-warehouse"),
+		resp, err := http.Post(fmt.Sprintf("%s%s", "http://localhost:8092", "/insert-warehouse"),
 			"application/json",
 			bytes.NewBuffer(requestBodyStr))
 		if err != nil {
@@ -89,8 +89,42 @@ func main() {
 			return
 		}
 
+		// send to audit service 2
+		grpcResponse, err = auditService.AuditSend(context.Background(), &pb.AuditSendRequest{
+			ServiceName: "interceptor 2",
+			RequestType: uint64(service.InterceptorInput),
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			logrus.Errorf("error when comm to audit service %s", err.Error())
+			return
+		}
+
+		if grpcResponse.Code != 200 {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": grpcResponse.Message})
+			logrus.Errorf("error at audit service %s", grpcResponse.Message)
+			return
+		}
+
 		// get from customer service
-		resp, err = http.Get(fmt.Sprintf("%s%s", cfg.CustomerAddress, "/customer")) // TODO, change this to customer endpoint
+		resp, err = http.Get(fmt.Sprintf("%s%s", "http://localhost:8093", "/customer")) // TODO, change this to customer endpoint
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			logrus.Errorf("error when comm to customer service %s", err.Error())
+			return
+		}
+
+		body, _ = io.ReadAll(resp.Body)
+		logrus.Info("Response Body from customer service:", string(body))
+
+		if resp.Status != "200 OK" {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": body})
+			logrus.Errorf("error at customer service %s", body)
+			return
+		}
+
+		// customer 2
+		resp, err = http.Get(fmt.Sprintf("%s%s", "http://localhost:8093", "/customer")) // TODO, change this to customer endpoint
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			logrus.Errorf("error when comm to customer service %s", err.Error())
@@ -109,7 +143,7 @@ func main() {
 		// return ok
 		c.JSON(http.StatusOK, gin.H{"message": "OK"})
 	})
-	if err := r.Run(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort)); err != nil {
+	if err := r.Run(fmt.Sprintf("0.0.0.0:%d", 8090)); err != nil {
 		logrus.Fatalf("cant run server %s", err.Error())
 	}
 }

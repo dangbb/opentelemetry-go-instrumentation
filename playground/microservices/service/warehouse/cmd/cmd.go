@@ -43,7 +43,7 @@ func (s *warehouse) InsertWarehouseHandler(w http.ResponseWriter, r *http.Reques
 
 	// send to kafka
 	msg := &sarama.ProducerMessage{
-		Topic: s.topic,
+		Topic: "warehouse",
 		Key:   sarama.ByteEncoder("key"),
 		Value: sarama.ByteEncoder(valueStr),
 		Headers: []sarama.RecordHeader{
@@ -103,12 +103,12 @@ func newWarehouseService(config config.Config) (WarehouseService, error) {
 
 	logrus.Infof("Connect to broker addr: %s", config.KafkaConfig.Broker)
 
-	brokers := []string{config.KafkaConfig.Broker}
+	brokers := []string{"localhost:9092"}
 
 	producer, err := sarama.NewSyncProducer(brokers, cfg)
 
 	// craft grpc client instance
-	conn, err := grpc.Dial(config.AuditAddress, grpc.WithTransportCredentials(
+	conn, err := grpc.Dial("localhost:8091", grpc.WithTransportCredentials(
 		insecure.NewCredentials()))
 	if err != nil {
 		logrus.Fatalf("can establish grpc client conn %s", err.Error())
@@ -133,9 +133,6 @@ func responseWithJson(writer http.ResponseWriter, status int, object interface{}
 }
 
 func main() {
-	logrus.Infof("Wait for 30 secs")
-
-	time.Sleep(30 * time.Second)
 	cfg := config.Config{}
 	kong.Parse(&cfg)
 
@@ -148,6 +145,6 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/insert-warehouse", service.InsertWarehouseHandler).Methods(http.MethodPost)
 
-	logrus.Infof("Run warehouse server at: 0.0.0.0:%d", cfg.HttpPort)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", cfg.HttpPort), r))
+	logrus.Infof("Run warehouse server at: 0.0.0.0:%d", 8092)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", 8092), r))
 }

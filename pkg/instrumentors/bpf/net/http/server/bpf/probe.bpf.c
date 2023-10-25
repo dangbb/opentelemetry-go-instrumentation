@@ -232,12 +232,29 @@ int uprobe_ServerMux_ServeHTTP(struct pt_regs *ctx)
     event3.sc = httpReq.sc;
     event3.type = GOID_SC;
 
-    bpf_printk("Type 3, server goid %d", httpReq.goid);
     bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
+
+    bpf_map_update_elem(&goroutine_sc_map, &httpReq.goid, &httpReq.sc, 0);
 
     bpf_map_update_elem(&http_events, &key, &httpReq, 0);
     start_tracking_span(req_ctx_ptr, &httpReq.sc);
     return 0;
 }
 
-UPROBE_RETURN(ServerMux_ServeHTTP, struct http_request_t, 4, ctx_ptr_pos, http_events, events)
+SEC("uprobe/ServerMux_ServeHTTP")
+int uprobe_ServerMux_ServeHTTP_Returns(struct pt_regs *ctx) {
+    u64 request_pos = 4;
+    void *req_ptr = get_argument(ctx, request_pos);
+    void *key = get_consistent_key(ctx, (void *)(req_ptr + ctx_ptr_pos));
+    void *req_ptr_map = bpf_map_lookup_elem(&http_events, &key);
+    struct http_request_t tmpReq = {};
+    bpf_probe_read(&tmpReq, sizeof(tmpReq), req_ptr_map);
+    tmpReq.end_time = bpf_ktime_get_ns();
+    bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));
+    bpf_map_delete_elem(&http_events, &key);
+    stop_tracking_span(&tmpReq.sc);
+
+    bpf_map_delete_elem(&goroutine_sc_map, &tmpReq.goid);
+
+    return 0;
+}

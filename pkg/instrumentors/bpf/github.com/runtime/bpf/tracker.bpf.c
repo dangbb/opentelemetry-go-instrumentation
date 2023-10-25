@@ -63,7 +63,6 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         event1.type = GOPC_PGOID;
 
         bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event1, sizeof(event1));
-        bpf_printk("Type 1, gopc %d - pgoid %d", gopc, cur_goid);
         return 0;
     }
 
@@ -79,7 +78,6 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         event2.type = GOID_GOPC;
 
         bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event2, sizeof(event2));
-        bpf_printk("Type 2, cur thread %d - goid %d", current_thread, goid);
     }
 
     return 0;

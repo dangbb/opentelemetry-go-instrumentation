@@ -108,7 +108,19 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
     bpf_probe_read(&path_ptr, sizeof(path_ptr), (void *)(entry_ptr + message_ptr_pos));
     bpf_probe_read(&logEvent.log, msg_len, path_ptr);
 
-    logEvent.sc = generate_span_context();
+    u64 goid = logEvent.goid;
+    void* same_goroutine_sc_ptr = bpf_map_lookup_elem(&goroutine_sc_map, &goid);
+
+    if (same_goroutine_sc_ptr != NULL) {
+        struct span_context sc = {};
+        bpf_probe_read(&sc, sizeof(sc), same_goroutine_sc_ptr);
+
+        logEvent.psc = sc;
+        copy_byte_arrays(logEvent.psc.TraceID, logEvent.sc.TraceID, TRACE_ID_SIZE);
+        generate_random_bytes(logEvent.sc.SpanID, SPAN_ID_SIZE);
+    } else {
+        logEvent.sc = generate_span_context();
+    }
 
     // add to perf map
     // BPF_F_CURRENT_CPU flaf option ?
