@@ -196,14 +196,16 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 			gmap.EnrichSpan(&event, event.Goid, i.LibraryName())
 
-			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\nTime %d - %d\n",
 				i.LibraryName(),
 				event.ParentSpanContext.TraceID.String(),
 				event.ParentSpanContext.SpanID.String(),
 				event.SpanContext.TraceID.String(),
 				event.SpanContext.SpanID.String(),
 				event.CurThread,
-				event.Goid)
+				event.Goid,
+				event.StartTime,
+				event.EndTime)
 
 			eventsChan <- i.convertEvent(&event)
 		}

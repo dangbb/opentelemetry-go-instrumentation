@@ -3,6 +3,7 @@ package gmap
 import (
 	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/events"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/rand"
 	"sync"
@@ -29,8 +30,15 @@ var (
 	goId2Sc     = map[uint64]context.EBPFSpanContext{}
 	goId2ScLock = sync.Mutex{}
 
+	writeLock = sync.Mutex{}
+
 	maxRange = 20
 )
+
+type linkedListNode struct {
+	sc         context.EBPFSpanContext
+	parentNode *linkedListNode
+}
 
 func getAncestorSc(goid uint64) (context.EBPFSpanContext, bool, bool) {
 	for {
@@ -114,20 +122,25 @@ func GetGoId2Sc(key uint64) (context.EBPFSpanContext, bool) {
 
 // GMapEvent Define gmap event
 type GMapEvent struct {
-	Key   uint64
-	Value uint64
-	Sc    context.EBPFSpanContext
-	Type  uint64
+	Key       uint64
+	Value     uint64
+	Sc        context.EBPFSpanContext
+	Type      uint64
+	StartTime uint64
 }
 
 // EnrichGMapEvent Define gmap event with addition field
 type EnrichGMapEvent struct {
-	Key uint64
-	Sc  context.EBPFSpanContext
-	Psc context.EBPFSpanContext
+	Key       uint64
+	Sc        context.EBPFSpanContext
+	Psc       context.EBPFSpanContext
+	StartTime uint64
 }
 
 func RegisterSpan(event *EnrichGMapEvent, lib string, replace bool) {
+	writeLock.Lock()
+	defer writeLock.Unlock()
+
 	goid := event.Key
 
 	// if goroutine id already taken, then skip
@@ -147,8 +160,9 @@ func RegisterSpan(event *EnrichGMapEvent, lib string, replace bool) {
 			event.Psc = psc
 			event.Sc.TraceID = event.Psc.TraceID
 			event.Sc.SpanID = GenRandomSpanId()
-		}
 
+			fmt.Printf("Ancestor found for %d", goid)
+		}
 		// set value of goroutine in current node to middleware
 		// all request after this will be the child of this middleware
 		fmt.Printf("Set goid %d, with pid: %s - sid: %s\n",
@@ -160,29 +174,30 @@ func RegisterSpan(event *EnrichGMapEvent, lib string, replace bool) {
 }
 
 func EnrichSpan(event context.IBaseSpan, goid uint64, lib string) {
+	writeLock.Lock()
+	defer writeLock.Unlock()
+
 	currentSc := event.GetSpanContext()
-	sc, ok := GetGoId2Sc(goid)
-	if ok { // same goroutine sc exist
-		if currentSc.SpanID.String() != sc.SpanID.String() {
-			currentSc.TraceID = sc.TraceID
-			event.SetSpanContext(currentSc)
-			event.SetParentSpanContext(sc)
-		}
-	} else {
-		psc, ok := GetAncestorSc(goid)
-		if ok { // parent goroutine sc exist
-			event.SetParentSpanContext(psc)
-			currentSc.TraceID = psc.TraceID
-			event.SetSpanContext(currentSc)
+
+	for i := 0; i < constant.MAX_RETRY; i++ {
+		sc, ok := GetGoId2Sc(goid)
+		if ok { // same goroutine sc exist
+			if currentSc.SpanID.String() != sc.SpanID.String() {
+				currentSc.TraceID = sc.TraceID
+				event.SetSpanContext(currentSc)
+				event.SetParentSpanContext(sc)
+			}
+			return
 		}
 	}
 }
 
 func ConvertEnrichEvent(event GMapEvent) EnrichGMapEvent {
 	return EnrichGMapEvent{
-		Key: event.Key,
-		Sc:  event.Sc,
-		Psc: context.EBPFSpanContext{},
+		Key:       event.Key,
+		Sc:        event.Sc,
+		Psc:       context.EBPFSpanContext{},
+		StartTime: event.StartTime,
 	}
 }
 
@@ -200,6 +215,8 @@ func ConvertEvent(event EnrichGMapEvent) *events.Event {
 		TraceFlags: trace.FlagsSampled,
 	})
 
+	fmt.Printf("Value of start time: %d\n", event.StartTime)
+
 	return &events.Event{
 		Library: "go.opentelemetry.io/auto/pkg/instrumentors/gmap",
 		// Do not include the high-cardinality path here (there is no
@@ -207,10 +224,13 @@ func ConvertEvent(event EnrichGMapEvent) *events.Event {
 		// Engine.ServeHTTP which is not passed a Gin Context).
 		Name:              "goroutine",
 		Kind:              trace.SpanKindInternal,
-		StartTime:         time.Now().Unix(), // TODO check
-		EndTime:           time.Now().Unix(),
+		StartTime:         int64(event.StartTime),
+		EndTime:           int64(event.StartTime),
 		SpanContext:       &sc,
 		ParentSpanContext: &psc,
+		Attributes: []attribute.KeyValue{
+			attribute.Key("go-id").Int64(int64(event.Key)),
+		},
 	}
 }
 

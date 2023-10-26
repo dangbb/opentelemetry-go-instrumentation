@@ -12,13 +12,6 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type bpfGmapT struct {
-	Key   uint64
-	Value uint64
-	Sc    bpfSpanContext
-	Type  uint64
-}
-
 type bpfGrpcRequestT struct {
 	StartTime uint64
 	EndTime   uint64
@@ -98,7 +91,6 @@ type bpfMapSpecs struct {
 	GrpcEvents                 *ebpf.MapSpec `ebpf:"grpc_events"`
 	HeadersBuffMap             *ebpf.MapSpec `ebpf:"headers_buff_map"`
 	InternalGoidToSpanContexts *ebpf.MapSpec `ebpf:"internal_goid_to_span_contexts"`
-	PlaceholderMap             *ebpf.MapSpec `ebpf:"placeholder_map"`
 	StreamidToSpanContexts     *ebpf.MapSpec `ebpf:"streamid_to_span_contexts"`
 	TrackedSpans               *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc           *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
@@ -131,7 +123,6 @@ type bpfMaps struct {
 	GrpcEvents                 *ebpf.Map `ebpf:"grpc_events"`
 	HeadersBuffMap             *ebpf.Map `ebpf:"headers_buff_map"`
 	InternalGoidToSpanContexts *ebpf.Map `ebpf:"internal_goid_to_span_contexts"`
-	PlaceholderMap             *ebpf.Map `ebpf:"placeholder_map"`
 	StreamidToSpanContexts     *ebpf.Map `ebpf:"streamid_to_span_contexts"`
 	TrackedSpans               *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc           *ebpf.Map `ebpf:"tracked_spans_by_sc"`
@@ -147,7 +138,6 @@ func (m *bpfMaps) Close() error {
 		m.GrpcEvents,
 		m.HeadersBuffMap,
 		m.InternalGoidToSpanContexts,
-		m.PlaceholderMap,
 		m.StreamidToSpanContexts,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,

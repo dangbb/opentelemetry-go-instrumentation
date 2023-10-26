@@ -12,13 +12,6 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type bpfGmapT struct {
-	Key   uint64
-	Value uint64
-	Sc    bpfSpanContext
-	Type  uint64
-}
-
 type bpfHttpRequestT struct {
 	StartTime uint64
 	EndTime   uint64
@@ -93,7 +86,6 @@ type bpfMapSpecs struct {
 	GoroutineScMap            *ebpf.MapSpec `ebpf:"goroutine_sc_map"`
 	GoroutinesMap             *ebpf.MapSpec `ebpf:"goroutines_map"`
 	HttpEvents                *ebpf.MapSpec `ebpf:"http_events"`
-	PlaceholderMap            *ebpf.MapSpec `ebpf:"placeholder_map"`
 	TrackedSpans              *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc          *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
 }
@@ -124,7 +116,6 @@ type bpfMaps struct {
 	GoroutineScMap            *ebpf.Map `ebpf:"goroutine_sc_map"`
 	GoroutinesMap             *ebpf.Map `ebpf:"goroutines_map"`
 	HttpEvents                *ebpf.Map `ebpf:"http_events"`
-	PlaceholderMap            *ebpf.Map `ebpf:"placeholder_map"`
 	TrackedSpans              *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc          *ebpf.Map `ebpf:"tracked_spans_by_sc"`
 }
@@ -138,7 +129,6 @@ func (m *bpfMaps) Close() error {
 		m.GoroutineScMap,
 		m.GoroutinesMap,
 		m.HttpEvents,
-		m.PlaceholderMap,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,
 	)

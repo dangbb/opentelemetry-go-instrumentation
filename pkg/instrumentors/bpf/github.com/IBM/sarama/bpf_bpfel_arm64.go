@@ -12,13 +12,6 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type bpfGmapT struct {
-	Key   uint64
-	Value uint64
-	Sc    bpfSpanContext
-	Type  uint64
-}
-
 type bpfPublisherMessageT struct {
 	StartTime   uint64
 	EndTime     uint64
@@ -97,7 +90,6 @@ type bpfMapSpecs struct {
 	GmapEvents             *ebpf.MapSpec `ebpf:"gmap_events"`
 	GoroutineScMap         *ebpf.MapSpec `ebpf:"goroutine_sc_map"`
 	GoroutinesMap          *ebpf.MapSpec `ebpf:"goroutines_map"`
-	PlaceholderMap         *ebpf.MapSpec `ebpf:"placeholder_map"`
 	PublisherMessageEvents *ebpf.MapSpec `ebpf:"publisher_message_events"`
 	TrackedSpans           *ebpf.MapSpec `ebpf:"tracked_spans"`
 	TrackedSpansBySc       *ebpf.MapSpec `ebpf:"tracked_spans_by_sc"`
@@ -126,7 +118,6 @@ type bpfMaps struct {
 	GmapEvents             *ebpf.Map `ebpf:"gmap_events"`
 	GoroutineScMap         *ebpf.Map `ebpf:"goroutine_sc_map"`
 	GoroutinesMap          *ebpf.Map `ebpf:"goroutines_map"`
-	PlaceholderMap         *ebpf.Map `ebpf:"placeholder_map"`
 	PublisherMessageEvents *ebpf.Map `ebpf:"publisher_message_events"`
 	TrackedSpans           *ebpf.Map `ebpf:"tracked_spans"`
 	TrackedSpansBySc       *ebpf.Map `ebpf:"tracked_spans_by_sc"`
@@ -138,7 +129,6 @@ func (m *bpfMaps) Close() error {
 		m.GmapEvents,
 		m.GoroutineScMap,
 		m.GoroutinesMap,
-		m.PlaceholderMap,
 		m.PublisherMessageEvents,
 		m.TrackedSpans,
 		m.TrackedSpansBySc,

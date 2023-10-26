@@ -18,6 +18,24 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func logLogrus() {
+	logrus.SetLevel(logrus.DebugLevel)
+
+	logrus.Trace("Something very low level.")
+	logrus.Debug("Useful debugging information.")
+	logrus.Info("Something noteworthy happened!")
+	logrus.Warn("You should probably take a look at this.")
+
+	go func() {
+		logrus.SetLevel(logrus.DebugLevel)
+
+		logrus.Trace("Something very low level.")
+		logrus.Debug("Useful debugging information.")
+		logrus.Info("Something noteworthy happened!")
+		logrus.Warn("You should probably take a look at this.")
+	}()
+}
+
 func main() {
 	cfg := config.Config{}
 	kong.Parse(&cfg)
@@ -72,6 +90,9 @@ func main() {
 			logrus.Errorf("error at warehouse service %s", body)
 			return
 		}
+
+		go logLogrus()
+
 		// send to audit service
 		grpcResponse, err := auditService.AuditSend(context.Background(), &pb.AuditSendRequest{
 			ServiceName: "interceptor",

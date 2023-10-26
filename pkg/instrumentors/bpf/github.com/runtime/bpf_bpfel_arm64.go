@@ -12,13 +12,6 @@ import (
 	"github.com/cilium/ebpf"
 )
 
-type bpfGmapT struct {
-	Key   uint64
-	Value uint64
-	Sc    bpfSpanContext
-	Type  uint64
-}
-
 type bpfSpanContext struct {
 	TraceID [16]uint8
 	SpanID  [8]uint8
@@ -76,7 +69,6 @@ type bpfMapSpecs struct {
 	GmapEvents     *ebpf.MapSpec `ebpf:"gmap_events"`
 	GoroutineScMap *ebpf.MapSpec `ebpf:"goroutine_sc_map"`
 	GoroutinesMap  *ebpf.MapSpec `ebpf:"goroutines_map"`
-	PlaceholderMap *ebpf.MapSpec `ebpf:"placeholder_map"`
 }
 
 // bpfObjects contains all objects after they have been loaded into the kernel.
@@ -101,7 +93,6 @@ type bpfMaps struct {
 	GmapEvents     *ebpf.Map `ebpf:"gmap_events"`
 	GoroutineScMap *ebpf.Map `ebpf:"goroutine_sc_map"`
 	GoroutinesMap  *ebpf.Map `ebpf:"goroutines_map"`
-	PlaceholderMap *ebpf.Map `ebpf:"placeholder_map"`
 }
 
 func (m *bpfMaps) Close() error {
@@ -109,7 +100,6 @@ func (m *bpfMaps) Close() error {
 		m.GmapEvents,
 		m.GoroutineScMap,
 		m.GoroutinesMap,
-		m.PlaceholderMap,
 	)
 }
 

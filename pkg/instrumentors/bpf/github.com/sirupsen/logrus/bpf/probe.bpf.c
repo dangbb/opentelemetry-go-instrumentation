@@ -135,6 +135,7 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
     event3.key = logEvent.goid;
     event3.sc = logEvent.sc;
     event3.type = GOID_SC;
+    event3.start_time = bpf_ktime_get_ns();
 
     bpf_printk("Type 3, logrus goid %d", logEvent.goid);
     bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));

@@ -122,6 +122,7 @@ int uprobe_server_handleStream(struct pt_regs *ctx)
     event3.key = grpcReq.goid;
     event3.sc = grpcReq.sc;
     event3.type = GOID_SC;
+    event3.start_time = bpf_ktime_get_ns();
 
     bpf_printk("Type 3, server goid %d", grpcReq.goid);
     bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
