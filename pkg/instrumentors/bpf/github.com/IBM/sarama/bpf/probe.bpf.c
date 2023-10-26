@@ -201,9 +201,8 @@ int uprobe_syncProducer_SendMessage(struct pt_regs *ctx)
     event3.key = req.goid;
     event3.sc = req.sc;
     event3.type = GOID_SC;
-    event3.start_time = bpf_ktime_get_ns();
+    event3.start_time = req.start_time;
 
-    bpf_printk("Type 3, sarama goid %d", req.goid);
 
     bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 

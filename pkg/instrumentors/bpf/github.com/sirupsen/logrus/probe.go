@@ -170,48 +170,6 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	wg.Add(2)
 
 	go func() {
-		var event Event
-
-		for {
-			record, err := i.eventsReader.Read()
-			if err != nil {
-				if errors.Is(err, perf.ErrClosed) {
-					logger.Info("[DEBUG] - Perf channel closed.")
-					return
-				}
-				logger.Error(err, "error reading from perf reader")
-				// Add metric to count error from perf reader
-				continue
-			}
-
-			if record.LostSamples != 0 {
-				logger.V(0).Info("perf event rung buffer full", "dropped", record.LostSamples)
-				continue
-			}
-
-			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-				logger.Error(err, "error parsing perf event")
-				continue
-			}
-
-			gmap.EnrichSpan(&event, event.Goid, i.LibraryName())
-
-			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\nTime %d - %d\n",
-				i.LibraryName(),
-				event.ParentSpanContext.TraceID.String(),
-				event.ParentSpanContext.SpanID.String(),
-				event.SpanContext.TraceID.String(),
-				event.SpanContext.SpanID.String(),
-				event.CurThread,
-				event.Goid,
-				event.StartTime,
-				event.EndTime)
-
-			eventsChan <- i.convertEvent(&event)
-		}
-	}()
-
-	go func() {
 		defer wg.Done()
 		var event gmap.GMapEvent
 		for {
@@ -241,6 +199,48 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				// middleware created
 				eventsChan <- gmap.ConvertEvent(enrichEvent)
 			}
+		}
+	}()
+
+	go func() {
+		var event Event
+
+		for {
+			record, err := i.eventsReader.Read()
+			if err != nil {
+				if errors.Is(err, perf.ErrClosed) {
+					logger.Info("[DEBUG] - Perf channel closed.")
+					return
+				}
+				logger.Error(err, "error reading from perf reader")
+				// Add metric to count error from perf reader
+				continue
+			}
+
+			if record.LostSamples != 0 {
+				logger.V(0).Info("perf event rung buffer full", "dropped", record.LostSamples)
+				continue
+			}
+
+			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+				logger.Error(err, "error parsing perf event")
+				continue
+			}
+
+			gmap.MustEnrichSpan(&event, event.Goid, i.LibraryName())
+
+			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\nTime %d - %d\n",
+				i.LibraryName(),
+				event.ParentSpanContext.TraceID.String(),
+				event.ParentSpanContext.SpanID.String(),
+				event.SpanContext.TraceID.String(),
+				event.SpanContext.SpanID.String(),
+				event.CurThread,
+				event.Goid,
+				event.StartTime,
+				event.EndTime)
+
+			eventsChan <- i.convertEvent(&event)
 		}
 	}()
 

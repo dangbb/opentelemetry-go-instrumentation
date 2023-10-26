@@ -76,6 +76,7 @@ volatile const u64 stream_ctx_pos;
 SEC("uprobe/server_handleStream")
 int uprobe_server_handleStream(struct pt_regs *ctx)
 {
+    bpf_printk("Get invoke at server_handleStream");
     u64 stream_pos = 4;
     void *stream_ptr = get_argument(ctx, stream_pos);
 
@@ -122,9 +123,8 @@ int uprobe_server_handleStream(struct pt_regs *ctx)
     event3.key = grpcReq.goid;
     event3.sc = grpcReq.sc;
     event3.type = GOID_SC;
-    event3.start_time = bpf_ktime_get_ns();
+    event3.start_time = grpcReq.start_time;
 
-    bpf_printk("Type 3, server goid %d", grpcReq.goid);
     bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 
     bpf_map_update_elem(&goroutine_sc_map, &grpcReq.goid, &grpcReq.sc, 0);

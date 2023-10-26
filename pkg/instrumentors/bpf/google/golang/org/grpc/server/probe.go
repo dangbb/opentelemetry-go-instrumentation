@@ -216,7 +216,7 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			gmap.EnrichSpan(&event, event.Goid, g.LibraryName())
+			gmap.MustEnrichSpan(&event, event.Goid, g.LibraryName())
 
 			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
 				g.LibraryName(),

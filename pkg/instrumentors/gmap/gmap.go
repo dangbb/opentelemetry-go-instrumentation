@@ -95,6 +95,8 @@ func SetGoId2PGoId(key, value uint64) {
 	defer goId2PGoIdLock.Unlock()
 
 	goId2PGoId[key] = value
+
+	fmt.Printf("Create edge from %d to %d\n", key, value)
 }
 
 func GetGoId2PGoId(key uint64) (uint64, bool) {
@@ -141,6 +143,8 @@ func RegisterSpan(event *EnrichGMapEvent, lib string, replace bool) {
 	writeLock.Lock()
 	defer writeLock.Unlock()
 
+	fmt.Printf("Trying to register span %d\n", event.Key)
+
 	goid := event.Key
 
 	// if goroutine id already taken, then skip
@@ -173,9 +177,11 @@ func RegisterSpan(event *EnrichGMapEvent, lib string, replace bool) {
 	}
 }
 
-func EnrichSpan(event context.IBaseSpan, goid uint64, lib string) {
+func MustEnrichSpan(event context.IBaseSpan, goid uint64, lib string) {
 	writeLock.Lock()
 	defer writeLock.Unlock()
+
+	fmt.Printf("Trying to enrich for goid %d - lib %s\n", goid, lib)
 
 	currentSc := event.GetSpanContext()
 

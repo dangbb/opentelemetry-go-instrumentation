@@ -220,7 +220,7 @@ int uprobe_HttpClient_Do(struct pt_regs *ctx) {
     event3.key = get_current_goroutine();
     event3.sc = httpReq.sc;
     event3.type = GOID_SC;
-    event3.start_time = bpf_ktime_get_ns();
+    event3.start_time = httpReq.start_time;
 
     bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
 

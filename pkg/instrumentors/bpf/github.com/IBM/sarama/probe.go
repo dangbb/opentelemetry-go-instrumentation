@@ -208,7 +208,7 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				logger.Error(err, "error parsing perf event")
 				continue
 			}
-			gmap.EnrichSpan(&event, event.Goid, i.LibraryName())
+			gmap.MustEnrichSpan(&event, event.Goid, i.LibraryName())
 
 			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
 				i.LibraryName(),
