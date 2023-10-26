@@ -266,7 +266,8 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			gmap.RegisterSpan(event, g.LibraryName())
+			enrichEvent := gmap.ConvertEnrichEvent(event)
+			gmap.RegisterSpan(&enrichEvent, g.LibraryName(), true)
 		}
 	}()
 

@@ -274,6 +274,14 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 					event.Sc.SpanID.String(),
 					event.Key)
 			}
+
+			enrichEvent := gmap.ConvertEnrichEvent(event)
+			gmap.RegisterSpan(&enrichEvent, g.LibraryName(), false)
+
+			if enrichEvent.Psc.TraceID.IsValid() {
+				// middleware created
+				eventsChan <- gmap.ConvertEvent(enrichEvent)
+			}
 		}
 	}()
 

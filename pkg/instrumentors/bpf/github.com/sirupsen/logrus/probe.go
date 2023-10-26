@@ -231,6 +231,14 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				logger.Error(err, "error parsing perf event")
 				continue
 			}
+
+			enrichEvent := gmap.ConvertEnrichEvent(event)
+			gmap.RegisterSpan(&enrichEvent, i.LibraryName(), false)
+
+			if enrichEvent.Psc.TraceID.IsValid() {
+				// middleware created
+				eventsChan <- gmap.ConvertEvent(enrichEvent)
+			}
 		}
 	}()
 

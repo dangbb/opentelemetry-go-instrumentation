@@ -260,7 +260,8 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			}
 
 			// Gin gonic using one goroutine for all process. Should only keep same site on eBPF
-			gmap.RegisterSpan(event, h.LibraryName())
+			enrichEvent := gmap.ConvertEnrichEvent(event)
+			gmap.RegisterSpan(&enrichEvent, h.LibraryName(), true)
 		}
 	}()
 

@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/rand"
 	"golang.org/x/sys/unix"
 	"os"
 	"sync"
@@ -246,36 +245,18 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				logger.Error(err, "error parsing perf event")
 				continue
 			}
+
+			enrichEvent := gmap.ConvertEnrichEvent(event)
+			gmap.RegisterSpan(&enrichEvent, i.LibraryName(), false)
+
+			if enrichEvent.Psc.TraceID.IsValid() {
+				// middleware created
+				eventsChan <- gmap.ConvertEvent(enrichEvent)
+			}
 		}
 	}()
 
 	wg.Wait()
-}
-
-func genRandomSpanId() trace.SpanID {
-	buff := trace.SpanID{}
-	for i := 0; i < 2; i++ {
-		random := rand.Int31()
-		buff[(4 * i)] = byte((random >> 24) & 0xFF)
-		buff[(4*i)+1] = byte((random >> 16) & 0xFF)
-		buff[(4*i)+2] = byte((random >> 8) & 0xFF)
-		buff[(4*i)+3] = byte(random & 0xFF)
-	}
-
-	return buff
-}
-
-func genRandomTraceId() trace.TraceID {
-	buff := trace.TraceID{}
-	for i := 0; i < 4; i++ {
-		random := rand.Int31()
-		buff[(4 * i)] = byte((random >> 24) & 0xFF)
-		buff[(4*i)+1] = byte((random >> 16) & 0xFF)
-		buff[(4*i)+2] = byte((random >> 8) & 0xFF)
-		buff[(4*i)+3] = byte(random & 0xFF)
-	}
-
-	return buff
 }
 
 func (i *Instrumentor) convertEvent(e *Event) *events.Event {

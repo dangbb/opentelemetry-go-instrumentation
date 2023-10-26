@@ -241,6 +241,15 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				logger.Error(err, "error parsing perf event")
 				continue
 			}
+
+			// gorilla/mux is deprecated
+			enrichEvent := gmap.ConvertEnrichEvent(event)
+			gmap.RegisterSpan(&enrichEvent, g.LibraryName(), false)
+
+			if enrichEvent.Psc.TraceID.IsValid() {
+				// middleware created
+				eventsChan <- gmap.ConvertEvent(enrichEvent)
+			}
 		}
 	}()
 

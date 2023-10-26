@@ -2,7 +2,11 @@ package gmap
 
 import (
 	"fmt"
+	"go.opentelemetry.io/auto/pkg/instrumentors/events"
+	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/rand"
 	"sync"
+	"time"
 
 	"go.opentelemetry.io/auto/pkg/instrumentors/constant"
 	"go.opentelemetry.io/auto/pkg/instrumentors/context"
@@ -108,7 +112,7 @@ func GetGoId2Sc(key uint64) (context.EBPFSpanContext, bool) {
 	return res, ok
 }
 
-// Define gmap event
+// GMapEvent Define gmap event
 type GMapEvent struct {
 	Key   uint64
 	Value uint64
@@ -116,27 +120,42 @@ type GMapEvent struct {
 	Type  uint64
 }
 
-func RegisterSpan(event GMapEvent, lib string) {
+// EnrichGMapEvent Define gmap event with addition field
+type EnrichGMapEvent struct {
+	Key uint64
+	Sc  context.EBPFSpanContext
+	Psc context.EBPFSpanContext
+}
+
+func RegisterSpan(event *EnrichGMapEvent, lib string, replace bool) {
 	goid := event.Key
 
 	// if goroutine id already taken, then skip
 	_, ok := GetGoId2Sc(goid)
 	if ok {
-		fmt.Printf("Replace goid %d, with pid: %s - sid: %s",
-			goid,
-			event.Sc.TraceID,
-			event.Sc.SpanID)
-		SetGoId2Sc(goid, event.Sc)
-	} else {
-		_, ok := GetAncestorSc(goid)
-		if ok {
-		} else {
-			fmt.Printf("Set goid %d, with pid: %s - sid: %s\n",
+		// for server, replace whenever got new event
+		if replace {
+			fmt.Printf("Replace goid %d, with pid: %s - sid: %s",
 				goid,
 				event.Sc.TraceID,
 				event.Sc.SpanID)
 			SetGoId2Sc(goid, event.Sc)
 		}
+	} else {
+		if psc, ok := GetAncestorSc(goid); ok {
+			// create new middleware for goroutine, p is founded ancestor, c is created new
+			event.Psc = psc
+			event.Sc.TraceID = event.Psc.TraceID
+			event.Sc.SpanID = GenRandomSpanId()
+		}
+
+		// set value of goroutine in current node to middleware
+		// all request after this will be the child of this middleware
+		fmt.Printf("Set goid %d, with pid: %s - sid: %s\n",
+			goid,
+			event.Sc.TraceID,
+			event.Sc.SpanID)
+		SetGoId2Sc(goid, event.Sc)
 	}
 }
 
@@ -144,7 +163,7 @@ func EnrichSpan(event context.IBaseSpan, goid uint64, lib string) {
 	currentSc := event.GetSpanContext()
 	sc, ok := GetGoId2Sc(goid)
 	if ok { // same goroutine sc exist
-		if currentSc.TraceID.String() != sc.TraceID.String() {
+		if currentSc.SpanID.String() != sc.SpanID.String() {
 			currentSc.TraceID = sc.TraceID
 			event.SetSpanContext(currentSc)
 			event.SetParentSpanContext(sc)
@@ -157,4 +176,68 @@ func EnrichSpan(event context.IBaseSpan, goid uint64, lib string) {
 			event.SetSpanContext(currentSc)
 		}
 	}
+}
+
+func ConvertEnrichEvent(event GMapEvent) EnrichGMapEvent {
+	return EnrichGMapEvent{
+		Key: event.Key,
+		Sc:  event.Sc,
+		Psc: context.EBPFSpanContext{},
+	}
+}
+
+// ConvertEvent convert new goroutine event
+func ConvertEvent(event EnrichGMapEvent) *events.Event {
+	sc := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    event.Sc.TraceID,
+		SpanID:     event.Sc.SpanID,
+		TraceFlags: trace.FlagsSampled,
+	})
+
+	psc := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    event.Psc.TraceID,
+		SpanID:     event.Psc.SpanID,
+		TraceFlags: trace.FlagsSampled,
+	})
+
+	return &events.Event{
+		Library: "go.opentelemetry.io/auto/pkg/instrumentors/gmap",
+		// Do not include the high-cardinality path here (there is no
+		// templatized path manifest to reference, given we are instrumenting
+		// Engine.ServeHTTP which is not passed a Gin Context).
+		Name:              "goroutine",
+		Kind:              trace.SpanKindInternal,
+		StartTime:         time.Now().Unix(), // TODO check
+		EndTime:           time.Now().Unix(),
+		SpanContext:       &sc,
+		ParentSpanContext: &psc,
+	}
+}
+
+func GenRandomSpanId() trace.SpanID {
+	rand.Seed(uint64(time.Now().UnixNano()))
+	buff := trace.SpanID{}
+	for i := 0; i < 2; i++ {
+		random := rand.Int31()
+		buff[(4 * i)] = byte((random >> 24) & 0xFF)
+		buff[(4*i)+1] = byte((random >> 16) & 0xFF)
+		buff[(4*i)+2] = byte((random >> 8) & 0xFF)
+		buff[(4*i)+3] = byte(random & 0xFF)
+	}
+
+	return buff
+}
+
+func GenRandomTraceId() trace.TraceID {
+	rand.Seed(uint64(time.Now().UnixNano()))
+	buff := trace.TraceID{}
+	for i := 0; i < 4; i++ {
+		random := rand.Int31()
+		buff[(4 * i)] = byte((random >> 24) & 0xFF)
+		buff[(4*i)+1] = byte((random >> 16) & 0xFF)
+		buff[(4*i)+2] = byte((random >> 8) & 0xFF)
+		buff[(4*i)+3] = byte(random & 0xFF)
+	}
+
+	return buff
 }

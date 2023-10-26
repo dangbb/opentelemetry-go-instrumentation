@@ -143,6 +143,7 @@ func (h *Instrumentor) Load(ctx *context.InstrumentorContext) error {
 // Run runs the events processing loop.
 func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	logger := log.Logger.WithName("database/sql/sql-instrumentor")
+	// TODO copy this to main repo and integrate trace
 	var event Event
 	for {
 		record, err := h.eventsReader.Read()
