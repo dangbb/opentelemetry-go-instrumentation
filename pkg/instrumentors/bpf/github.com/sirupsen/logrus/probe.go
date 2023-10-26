@@ -191,14 +191,6 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				logger.Error(err, "error parsing perf event")
 				continue
 			}
-
-			enrichEvent := gmap.ConvertEnrichEvent(event)
-			gmap.RegisterSpan(&enrichEvent, i.LibraryName(), false)
-
-			if enrichEvent.Psc.TraceID.IsValid() {
-				// middleware created
-				eventsChan <- gmap.ConvertEvent(enrichEvent)
-			}
 		}
 	}()
 
@@ -225,6 +217,20 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
 				logger.Error(err, "error parsing perf event")
 				continue
+			}
+
+			// For internal service
+			enrichEvent := gmap.EnrichGMapEvent{
+				Key:       event.Goid,
+				Sc:        event.SpanContext,
+				Psc:       event.ParentSpanContext,
+				StartTime: event.StartTime,
+			}
+			gmap.RegisterSpan(&enrichEvent, i.LibraryName(), false)
+
+			if enrichEvent.Psc.TraceID.IsValid() {
+				// middleware created
+				eventsChan <- gmap.ConvertEvent(enrichEvent)
 			}
 
 			gmap.MustEnrichSpan(&event, event.Goid, i.LibraryName())
