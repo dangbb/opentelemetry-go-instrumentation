@@ -152,15 +152,6 @@ int uprobe_ClientConn_Invoke(struct pt_regs *ctx)
     // Store to inject later
     bpf_map_update_elem(&internal_goid_to_span_contexts, &goid, &grpcReq.sc, 0);
 
-    // send type 3 event
-    struct gmap_t event4 = {};
-
-    event4.key = 1;
-    event4.sc = grpcReq.sc;
-    event4.type = 4;
-
-    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event4, sizeof(event4));
-
     // Get key
     void *key = get_consistent_key(ctx, context_ptr);
 
@@ -213,15 +204,6 @@ int uprobe_LoopyWriter_HeaderHandler(struct pt_regs *ctx)
 
     struct span_context current_span_context = {};
     bpf_probe_read(&current_span_context, sizeof(current_span_context), sc_ptr);
-
-    // send type 3 event
-    struct gmap_t event4 = {};
-
-    event4.key = 2;
-    event4.sc = current_span_context;
-    event4.type = 4;
-
-    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event4, sizeof(event4));
 
     char tp_key[11] = "traceparent";
     struct go_string key_str = write_user_go_string(tp_key, sizeof(tp_key));
