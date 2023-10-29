@@ -19,6 +19,7 @@ package instrumentors
 
 import (
 	"fmt"
+	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/database/sql"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/IBM/sarama"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/gin-gonic/gin"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/runtime"
@@ -116,6 +117,7 @@ func (m *Manager) FilterUnusedInstrumentors(target *process.TargetDetails) {
 
 func registerInstrumentors(m *Manager) error {
 	insts := []Instrumentor{
+		sql.New(),
 		grpc.New(),
 		grpcServer.New(),
 		httpServer.New(),
