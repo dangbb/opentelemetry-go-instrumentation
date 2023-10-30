@@ -30,5 +30,6 @@ test/**/traces-orig.json
 # ignore db files created by the example or tests
 *.db
 vendor
-/playground/microservices/docker/volume/
-/playground/microservices/bin/
+/playground/microservices_pure/docker/volume/
+/playground/microservices_pure/bin/
+/playground/monitoring/volume/
