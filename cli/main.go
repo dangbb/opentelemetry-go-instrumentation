@@ -16,15 +16,17 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"go.opentelemetry.io/auto/pkg/errors"
 	"go.opentelemetry.io/auto/pkg/instrumentors"
+	"go.opentelemetry.io/auto/pkg/instrumentors/utils"
 	"go.opentelemetry.io/auto/pkg/log"
 	"go.opentelemetry.io/auto/pkg/opentelemetry"
 	"go.opentelemetry.io/auto/pkg/process"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -41,6 +43,33 @@ func main() {
 		log.Logger.Error(err, "invalid target args")
 		return
 	}
+
+	// Define singleton for event properties
+	// parse queue deplay duration
+	delayDurationRaw, exists := os.LookupEnv("QUEUE_DELAY_DURATION")
+	if !exists {
+		delayDurationRaw = "5s"
+	}
+	delayDuration, err := time.ParseDuration(delayDurationRaw)
+	if err != nil {
+		log.Logger.Error(err, "error while parse delay duration for queue")
+		return
+	}
+
+	// parse queue max size
+	maxSizeRaw, exists := os.LookupEnv("QUEUE_MAX_SIZE")
+	if !exists {
+		maxSizeRaw = "0"
+	}
+	maxSize, err := strconv.ParseInt(maxSizeRaw, 10, 64)
+	if err != nil {
+		log.Logger.Error(err, "error while parse max size")
+		return
+	}
+
+	// init priority queue
+	utils.Initialize(delayDuration, uint64(maxSize))
+	utils.EventProrityQueueSingleton.Run()
 
 	processAnalyzer := process.NewAnalyzer()
 	otelController, err := opentelemetry.NewController()
@@ -62,6 +91,7 @@ func main() {
 		log.Logger.V(0).Info("Got SIGTERM, cleaning up..")
 		processAnalyzer.Close()
 		instManager.Close()
+		utils.EventProrityQueueSingleton.Close()
 	}()
 
 	pid, err := processAnalyzer.DiscoverProcessID(target)

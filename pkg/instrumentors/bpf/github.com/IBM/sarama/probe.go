@@ -183,6 +183,37 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
+	saramaMainEventType := utils.ItemType("sarama_main_event")
+	saramaPlaceholderEventType := utils.ItemType("sarama_placeholder_event")
+
+	utils.EventProrityQueueSingleton.Register(saramaMainEventType, func(rawEvent interface{}) {
+		event := rawEvent.(Event)
+
+		gmap.MustEnrichSpan(&event, event.Goid, i.LibraryName())
+
+		fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+			i.LibraryName(),
+			event.ParentSpanContext.TraceID.String(),
+			event.ParentSpanContext.SpanID.String(),
+			event.SpanContext.TraceID.String(),
+			event.SpanContext.SpanID.String(),
+			event.CurThread,
+			event.Goid)
+
+		eventsChan <- i.convertEvent(&event)
+	})
+
+	utils.EventProrityQueueSingleton.Register(saramaPlaceholderEventType, func(rawEvent interface{}) {
+		event := rawEvent.(gmap.GMapEvent)
+		enrichEvent := gmap.ConvertEnrichEvent(event)
+		gmap.RegisterSpan(&enrichEvent, i.LibraryName(), false)
+
+		if enrichEvent.Psc.TraceID.IsValid() {
+			// middleware created
+			eventsChan <- gmap.ConvertEvent(enrichEvent)
+		}
+	})
+
 	go func() {
 		defer wg.Done()
 		var event Event
@@ -208,18 +239,8 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				logger.Error(err, "error parsing perf event")
 				continue
 			}
-			gmap.MustEnrichSpan(&event, event.Goid, i.LibraryName())
 
-			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
-				i.LibraryName(),
-				event.ParentSpanContext.TraceID.String(),
-				event.ParentSpanContext.SpanID.String(),
-				event.SpanContext.TraceID.String(),
-				event.SpanContext.SpanID.String(),
-				event.CurThread,
-				event.Goid)
-
-			eventsChan <- i.convertEvent(&event)
+			utils.EventProrityQueueSingleton.Push(event, event.StartTime, saramaMainEventType)
 		}
 	}()
 
@@ -246,13 +267,7 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			enrichEvent := gmap.ConvertEnrichEvent(event)
-			gmap.RegisterSpan(&enrichEvent, i.LibraryName(), false)
-
-			if enrichEvent.Psc.TraceID.IsValid() {
-				// middleware created
-				eventsChan <- gmap.ConvertEvent(enrichEvent)
-			}
+			utils.EventProrityQueueSingleton.Push(event, event.StartTime-1, saramaPlaceholderEventType)
 		}
 	}()
 

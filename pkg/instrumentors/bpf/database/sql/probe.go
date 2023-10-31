@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"os"
 	"strconv"
@@ -157,6 +158,37 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
+	sqlMainEventType := utils.ItemType("database_sql_main_event")
+	sqlPlaceholderEventType := utils.ItemType("database_sql_placeholder_event")
+
+	utils.EventProrityQueueSingleton.Register(sqlMainEventType, func(rawEvent interface{}) {
+		event := rawEvent.(Event)
+
+		gmap.MustEnrichSpan(&event, event.Goid, h.LibraryName())
+
+		fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - expected goid: %d\n",
+			h.LibraryName(),
+			event.ParentSpanContext.TraceID.String(),
+			event.ParentSpanContext.SpanID.String(),
+			event.SpanContext.TraceID.String(),
+			event.SpanContext.SpanID.String(),
+			event.Goid)
+
+		eventsChan <- h.convertEvent(&event)
+	})
+
+	utils.EventProrityQueueSingleton.Register(sqlPlaceholderEventType, func(rawEvent interface{}) {
+		event := rawEvent.(gmap.GMapEvent)
+
+		enrichEvent := gmap.ConvertEnrichEvent(event)
+		gmap.RegisterSpan(&enrichEvent, h.LibraryName(), false)
+
+		if enrichEvent.Psc.TraceID.IsValid() {
+			// middleware created
+			eventsChan <- gmap.ConvertEvent(enrichEvent)
+		}
+	})
+
 	go func() {
 		defer wg.Done()
 
@@ -181,7 +213,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			eventsChan <- h.convertEvent(&event)
+			utils.EventProrityQueueSingleton.Push(event, event.StartTime, sqlMainEventType)
 		}
 	}()
 
@@ -208,13 +240,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			enrichEvent := gmap.ConvertEnrichEvent(event)
-			gmap.RegisterSpan(&enrichEvent, h.LibraryName(), false)
-
-			if enrichEvent.Psc.TraceID.IsValid() {
-				// middleware created
-				eventsChan <- gmap.ConvertEvent(enrichEvent)
-			}
+			utils.EventProrityQueueSingleton.Push(event, event.StartTime-1, sqlPlaceholderEventType)
 		}
 	}()
 

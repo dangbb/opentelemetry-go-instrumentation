@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
+	"go.opentelemetry.io/auto/pkg/instrumentors/utils"
 	"os"
 	"sync"
 
@@ -178,6 +179,45 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
+	netClientMainEventType := utils.ItemType("net_client_main_event")
+	netClientPlaceholderEventType := utils.ItemType("net_client_placeholder_event")
+
+	utils.EventProrityQueueSingleton.Register(netClientMainEventType, func(rawEvent interface{}) {
+		event := rawEvent.(Event)
+		fmt.Printf("%s - before - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+			h.LibraryName(),
+			event.ParentSpanContext.TraceID.String(),
+			event.ParentSpanContext.SpanID.String(),
+			event.SpanContext.TraceID.String(),
+			event.SpanContext.SpanID.String(),
+			event.CurThread,
+			event.Goid)
+
+		gmap.MustEnrichSpan(&event, event.Goid, h.LibraryName())
+
+		fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+			h.LibraryName(),
+			event.ParentSpanContext.TraceID.String(),
+			event.ParentSpanContext.SpanID.String(),
+			event.SpanContext.TraceID.String(),
+			event.SpanContext.SpanID.String(),
+			event.CurThread,
+			event.Goid)
+
+		eventsChan <- h.convertEvent(&event)
+	})
+
+	utils.EventProrityQueueSingleton.Register(netClientPlaceholderEventType, func(rawEvent interface{}) {
+		event := rawEvent.(gmap.GMapEvent)
+		enrichEvent := gmap.ConvertEnrichEvent(event)
+		gmap.RegisterSpan(&enrichEvent, h.LibraryName(), false)
+
+		if enrichEvent.Psc.TraceID.IsValid() {
+			// middleware created
+			eventsChan <- gmap.ConvertEvent(enrichEvent)
+		}
+	})
+
 	go func() {
 		defer wg.Done()
 		var event Event
@@ -201,27 +241,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			fmt.Printf("%s - before - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
-				h.LibraryName(),
-				event.ParentSpanContext.TraceID.String(),
-				event.ParentSpanContext.SpanID.String(),
-				event.SpanContext.TraceID.String(),
-				event.SpanContext.SpanID.String(),
-				event.CurThread,
-				event.Goid)
-
-			gmap.MustEnrichSpan(&event, event.Goid, h.LibraryName())
-
-			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
-				h.LibraryName(),
-				event.ParentSpanContext.TraceID.String(),
-				event.ParentSpanContext.SpanID.String(),
-				event.SpanContext.TraceID.String(),
-				event.SpanContext.SpanID.String(),
-				event.CurThread,
-				event.Goid)
-
-			eventsChan <- h.convertEvent(&event)
+			utils.EventProrityQueueSingleton.Push(event, event.StartTime, netClientMainEventType)
 		}
 	}()
 
@@ -248,13 +268,7 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			enrichEvent := gmap.ConvertEnrichEvent(event)
-			gmap.RegisterSpan(&enrichEvent, h.LibraryName(), false)
-
-			if enrichEvent.Psc.TraceID.IsValid() {
-				// middleware created
-				eventsChan <- gmap.ConvertEvent(enrichEvent)
-			}
+			utils.EventProrityQueueSingleton.Push(event, event.StartTime-1, netClientPlaceholderEventType)
 		}
 	}()
 

@@ -206,6 +206,46 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
+	grpcClientMainEventType := utils.ItemType("gprc_client_main_event")
+	grpcClientPlaceholderEventType := utils.ItemType("grpc_client_placeholder_event")
+
+	utils.EventProrityQueueSingleton.Register(grpcClientMainEventType, func(rawEvent interface{}) {
+		event := rawEvent.(Event)
+
+		gmap.MustEnrichSpan(&event, event.Goid, g.LibraryName())
+
+		fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+			g.LibraryName(),
+			event.ParentSpanContext.TraceID.String(),
+			event.ParentSpanContext.SpanID.String(),
+			event.SpanContext.TraceID.String(),
+			event.SpanContext.SpanID.String(),
+			event.CurThread,
+			event.Goid)
+
+		eventsChan <- g.convertEvent(&event)
+	})
+
+	utils.EventProrityQueueSingleton.Register(grpcClientPlaceholderEventType, func(rawEvent interface{}) {
+		event := rawEvent.(gmap.GMapEvent)
+		if event.Type == 4 {
+			fmt.Printf("%s - type 4 DEBUG event - write trace sc.tid: %s - sc.sid: %s - key: %d\n",
+				g.LibraryName(),
+				event.Sc.TraceID.String(),
+				event.Sc.SpanID.String(),
+				event.Key)
+			return
+		}
+
+		enrichEvent := gmap.ConvertEnrichEvent(event)
+		gmap.RegisterSpan(&enrichEvent, g.LibraryName(), false)
+
+		if enrichEvent.Psc.TraceID.IsValid() {
+			// middleware created
+			eventsChan <- gmap.ConvertEvent(enrichEvent)
+		}
+	})
+
 	go func() {
 		defer wg.Done()
 		var event Event
@@ -229,18 +269,7 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			gmap.MustEnrichSpan(&event, event.Goid, g.LibraryName())
-
-			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
-				g.LibraryName(),
-				event.ParentSpanContext.TraceID.String(),
-				event.ParentSpanContext.SpanID.String(),
-				event.SpanContext.TraceID.String(),
-				event.SpanContext.SpanID.String(),
-				event.CurThread,
-				event.Goid)
-
-			eventsChan <- g.convertEvent(&event)
+			utils.EventProrityQueueSingleton.Push(event, event.StartTime, grpcClientMainEventType)
 		}
 	}()
 
@@ -267,21 +296,7 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			if event.Type == 4 {
-				fmt.Printf("%s - type 4 DEBUG event - write trace sc.tid: %s - sc.sid: %s - key: %d\n",
-					g.LibraryName(),
-					event.Sc.TraceID.String(),
-					event.Sc.SpanID.String(),
-					event.Key)
-			}
-
-			enrichEvent := gmap.ConvertEnrichEvent(event)
-			gmap.RegisterSpan(&enrichEvent, g.LibraryName(), false)
-
-			if enrichEvent.Psc.TraceID.IsValid() {
-				// middleware created
-				eventsChan <- gmap.ConvertEvent(enrichEvent)
-			}
+			utils.EventProrityQueueSingleton.Push(event, event.StartTime-1, grpcClientPlaceholderEventType)
 		}
 	}()
 

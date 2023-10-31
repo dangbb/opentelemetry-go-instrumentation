@@ -61,6 +61,7 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         event1.key = gopc;
         event1.value = cur_goid;
         event1.type = GOPC_PGOID;
+        event1.start_time = bpf_ktime_get_ns();
 
         bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event1, sizeof(event1));
         return 0;
@@ -76,6 +77,7 @@ int uprobe_runtime_casgstatus_ByRegisters(struct pt_regs *ctx) {
         event2.key = goid;
         event2.value = gopc;
         event2.type = GOID_GOPC;
+        event2.start_time = bpf_ktime_get_ns();
 
         bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event2, sizeof(event2));
     }

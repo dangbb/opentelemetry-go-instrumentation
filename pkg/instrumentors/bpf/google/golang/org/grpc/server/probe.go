@@ -193,6 +193,44 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
+	grpcServerMainEventType := utils.ItemType("grpc_server_main_event")
+	grpcServerPlaceholderEventType := utils.ItemType("grpc_server_placeholder_event")
+
+	utils.EventProrityQueueSingleton.Register(grpcServerMainEventType, func(rawEvent interface{}) {
+		event := rawEvent.(Event)
+
+		gmap.MustEnrichSpan(&event, event.Goid, g.LibraryName())
+
+		fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
+			g.LibraryName(),
+			event.ParentSpanContext.TraceID.String(),
+			event.ParentSpanContext.SpanID.String(),
+			event.SpanContext.TraceID.String(),
+			event.SpanContext.SpanID.String(),
+			event.CurThread,
+			event.Goid)
+
+		eventsChan <- g.convertEvent(&event)
+	})
+
+	utils.EventProrityQueueSingleton.Register(grpcServerPlaceholderEventType, func(rawEvent interface{}) {
+		event := rawEvent.(gmap.GMapEvent)
+		fmt.Printf("grpc.Server get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
+			event.Type,
+			event.Key,
+			event.Value,
+			event.Sc.TraceID.String(),
+			event.Sc.SpanID.String())
+
+		if event.Type != gmap.GoId2Sc {
+			logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")
+			return
+		}
+
+		enrichEvent := gmap.ConvertEnrichEvent(event)
+		gmap.RegisterSpan(&enrichEvent, g.LibraryName(), true)
+	})
+
 	go func() {
 		defer wg.Done()
 		var event Event
@@ -216,18 +254,7 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			gmap.MustEnrichSpan(&event, event.Goid, g.LibraryName())
-
-			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
-				g.LibraryName(),
-				event.ParentSpanContext.TraceID.String(),
-				event.ParentSpanContext.SpanID.String(),
-				event.SpanContext.TraceID.String(),
-				event.SpanContext.SpanID.String(),
-				event.CurThread,
-				event.Goid)
-
-			eventsChan <- g.convertEvent(&event)
+			utils.EventProrityQueueSingleton.Push(event, event.StartTime, grpcServerMainEventType)
 		}
 	}()
 
@@ -254,20 +281,7 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			fmt.Printf("grpc.Server get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
-				event.Type,
-				event.Key,
-				event.Value,
-				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String())
-
-			if event.Type != gmap.GoId2Sc {
-				logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")
-				continue
-			}
-
-			enrichEvent := gmap.ConvertEnrichEvent(event)
-			gmap.RegisterSpan(&enrichEvent, g.LibraryName(), true)
+			utils.EventProrityQueueSingleton.Push(event, event.StartTime-1, grpcServerPlaceholderEventType)
 		}
 	}()
 

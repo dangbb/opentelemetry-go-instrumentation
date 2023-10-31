@@ -1,15 +1,20 @@
 package utils
 
-import "time"
+import (
+	"container/heap"
+	"fmt"
+	"go.opentelemetry.io/auto/pkg/log"
+	"sync"
+	"time"
+)
 
-type ItemType string {
-
-}
+type ItemType string
 
 // An Item is something we manage in a priority queue.
 type Item struct {
-	value    interface{} // The value of the item; arbitrary.
-	name     string
+	value interface{} // The value of the item; arbitrary.
+	iType ItemType
+
 	arriveAt uint64 // the time at which record is arrived.
 	priority uint64 // The priority of the item in the queue.
 	index    int    // The index of the item in the heap.
@@ -51,4 +56,120 @@ type EventPriorityQueue struct {
 	queue         PriorityQueue
 	delayDuration time.Duration
 	maxSize       uint64
+	mu            sync.Mutex
+
+	handlerMap map[ItemType]func(interface{})
+
+	done chan struct{}
+}
+
+var (
+	EventProrityQueueSingleton *EventPriorityQueue
+)
+
+func Initialize(delayDuration time.Duration, maxSize uint64) {
+	if EventProrityQueueSingleton != nil {
+		return
+	}
+
+	EventProrityQueueSingleton = &EventPriorityQueue{
+		queue:         make(PriorityQueue, 0),
+		delayDuration: -1 * delayDuration,
+		maxSize:       maxSize,
+		mu:            sync.Mutex{},
+		handlerMap:    make(map[ItemType]func(interface{})),
+	}
+
+	heap.Init(&EventProrityQueueSingleton.queue)
+
+	log.Logger.V(0).Info("Done initialize priority queue singleton")
+}
+
+func (epq *EventPriorityQueue) Push(event interface{}, priority uint64, iType ItemType) {
+	EventProrityQueueSingleton.mu.Lock()
+	defer EventProrityQueueSingleton.mu.Unlock()
+
+	if epq.maxSize != 0 && epq.queue.Len() >= int(epq.maxSize) {
+		// TODO add count to number of event ignored
+		return
+	}
+
+	heap.Push(&epq.queue, &Item{
+		value:    event,
+		iType:    iType,
+		arriveAt: uint64(time.Now().UnixNano()),
+		priority: priority,
+	})
+
+	log.Logger.Info(fmt.Sprintf("Send message to server with priority %d", priority))
+}
+
+func (epq *EventPriorityQueue) Register(iType ItemType, handler func(interface{})) {
+	EventProrityQueueSingleton.mu.Lock()
+	defer EventProrityQueueSingleton.mu.Unlock()
+
+	epq.handlerMap[iType] = handler
+
+	log.Logger.Info(fmt.Sprintf("event pqueue singletone register done for %s", iType))
+}
+
+func (epq *EventPriorityQueue) Unregister(iType ItemType) {
+	EventProrityQueueSingleton.mu.Lock()
+	defer EventProrityQueueSingleton.mu.Unlock()
+
+	delete(epq.handlerMap, iType)
+}
+
+func (epq *EventPriorityQueue) Run() {
+	log.Logger.Info("Start priority queue for event")
+
+	previousPriority := uint64(0)
+
+	go func() {
+		for {
+			select {
+			case <-epq.done:
+				break
+			default:
+				func() {
+					EventProrityQueueSingleton.mu.Lock()
+					defer EventProrityQueueSingleton.mu.Unlock()
+
+					if epq.queue.Len() == 0 {
+						return
+					}
+
+					event := heap.Pop(&epq.queue).(*Item)
+					if event.arriveAt > uint64(time.Now().Add(epq.delayDuration).UnixNano()) {
+						heap.Push(&epq.queue, event)
+						return
+					}
+
+					if event.priority < previousPriority {
+						log.Logger.Info("[ERROR] - The incoming request is not following order")
+					}
+					previousPriority = event.priority
+
+					log.Logger.Info(fmt.Sprintf("Process event with priority %d, arrive at %d compare with now %d, %t",
+						event.priority,
+						event.arriveAt,
+						uint64(time.Now().Add(epq.delayDuration).UnixNano()),
+						event.arriveAt > uint64(time.Now().Add(epq.delayDuration).UnixNano()),
+					))
+
+					handler, ok := epq.handlerMap[event.iType]
+					if !ok {
+						log.Logger.Info(fmt.Sprintf("Error when find handler for %s", event.iType))
+						return
+					}
+
+					handler(event.value)
+				}()
+			}
+		}
+	}()
+}
+
+func (epq *EventPriorityQueue) Close() {
+	epq.done <- struct{}{}
 }

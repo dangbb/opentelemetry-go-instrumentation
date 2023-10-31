@@ -95,8 +95,6 @@ func SetGoId2PGoId(key, value uint64) {
 	defer goId2PGoIdLock.Unlock()
 
 	goId2PGoId[key] = value
-
-	fmt.Printf("Create edge from %d to %d\n", key, value)
 }
 
 func GetGoId2PGoId(key uint64) (uint64, bool) {

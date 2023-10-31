@@ -24,13 +24,6 @@ const (
 	instrumentorName = "runtime-instrumentor"
 )
 
-type GmapEvent struct {
-	Key   uint64
-	Value uint64
-	Sc    context.EBPFSpanContext
-	Type  uint64
-}
-
 type Instrumentor struct {
 	bpfObjects   *bpfObjects
 	uprobes      []link.Link
@@ -116,9 +109,29 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 	i.uprobes = append(i.uprobes, up)
 }
 
+func (i *Instrumentor) EventHandler(rawEvent interface{}) {
+	event := rawEvent.(gmap.GMapEvent)
+
+	switch event.Type {
+	case gmap.GoPc2PGoId:
+		gmap.SetGoPc2GoId(event.Key, event.Value)
+	case gmap.GoId2GoPc:
+		pgoid, ok := gmap.GetGoPc2GoId(event.Value)
+		if !ok {
+			return
+		}
+		gmap.SetGoId2PGoId(event.Key, pgoid)
+	}
+}
+
 func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	logger := log.Logger.WithName("net/http-instrumentor")
-	var event GmapEvent
+
+	runtimeEventType := utils.ItemType("runtime_event")
+
+	utils.EventProrityQueueSingleton.Register(runtimeEventType, i.EventHandler)
+
+	var event gmap.GMapEvent
 	for {
 		record, err := i.eventsReader.Read()
 		if err != nil {
@@ -139,16 +152,7 @@ func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			continue
 		}
 
-		switch event.Type {
-		case gmap.GoPc2PGoId:
-			gmap.SetGoPc2GoId(event.Key, event.Value)
-		case gmap.GoId2GoPc:
-			pgoid, ok := gmap.GetGoPc2GoId(event.Value)
-			if !ok {
-				continue
-			}
-			gmap.SetGoId2PGoId(event.Key, pgoid)
-		}
+		utils.EventProrityQueueSingleton.Push(event, event.StartTime, runtimeEventType)
 	}
 }
 
