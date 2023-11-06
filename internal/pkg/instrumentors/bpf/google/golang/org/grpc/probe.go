@@ -245,7 +245,6 @@ func (g *Instrumentor) convertEvent(e *Event) *events.Event {
 		pscPtr = nil
 	}
 
-	log.Logger.V(0).Info("got spancontext", "trace_id", e.SpanContext.TraceID.String(), "span_id", e.SpanContext.SpanID.String())
 	return &events.Event{
 		Library:           g.LibraryName(),
 		Name:              method,

@@ -100,8 +100,6 @@ func (epq *EventPriorityQueue) Push(event interface{}, priority uint64, iType It
 		arriveAt: uint64(time.Now().UnixNano()),
 		priority: priority,
 	})
-
-	log.Logger.Info(fmt.Sprintf("Send message to server with priority %d", priority))
 }
 
 func (epq *EventPriorityQueue) Register(iType ItemType, handler func(interface{})) {
@@ -109,8 +107,6 @@ func (epq *EventPriorityQueue) Register(iType ItemType, handler func(interface{}
 	defer EventProrityQueueSingleton.mu.Unlock()
 
 	epq.handlerMap[iType] = handler
-
-	log.Logger.Info(fmt.Sprintf("event pqueue singletone register done for %s", iType))
 }
 
 func (epq *EventPriorityQueue) Unregister(iType ItemType) {
@@ -149,13 +145,6 @@ func (epq *EventPriorityQueue) Run() {
 						log.Logger.Info("[ERROR] - The incoming request is not following order")
 					}
 					previousPriority = event.priority
-
-					log.Logger.Info(fmt.Sprintf("Process event with priority %d, arrive at %d compare with now %d, %t",
-						event.priority,
-						event.arriveAt,
-						uint64(time.Now().Add(epq.delayDuration).UnixNano()),
-						event.arriveAt > uint64(time.Now().Add(epq.delayDuration).UnixNano()),
-					))
 
 					handler, ok := epq.handlerMap[event.iType]
 					if !ok {

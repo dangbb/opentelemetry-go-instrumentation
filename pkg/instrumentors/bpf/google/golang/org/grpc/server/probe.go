@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"golang.org/x/xerrors"
 	"os"
@@ -201,26 +200,11 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 		gmap.MustEnrichSpan(&event, event.Goid, g.LibraryName())
 
-		fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
-			g.LibraryName(),
-			event.ParentSpanContext.TraceID.String(),
-			event.ParentSpanContext.SpanID.String(),
-			event.SpanContext.TraceID.String(),
-			event.SpanContext.SpanID.String(),
-			event.CurThread,
-			event.Goid)
-
 		eventsChan <- g.convertEvent(&event)
 	})
 
 	utils.EventProrityQueueSingleton.Register(grpcServerPlaceholderEventType, func(rawEvent interface{}) {
 		event := rawEvent.(gmap.GMapEvent)
-		fmt.Printf("grpc.Server get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
-			event.Type,
-			event.Key,
-			event.Value,
-			event.Sc.TraceID.String(),
-			event.Sc.SpanID.String())
 
 		if event.Type != gmap.GoId2Sc {
 			logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")

@@ -103,15 +103,18 @@ func newWarehouseService(config config.Config) (WarehouseService, error) {
 
 	logrus.Infof("Connect to broker addr: %s", config.KafkaConfig.Broker)
 
-	brokers := []string{"localhost:9092"}
+	brokers := []string{"0.0.0.0:9092"}
 
 	producer, err := sarama.NewSyncProducer(brokers, cfg)
+	if err != nil {
+		logrus.Fatalf("cant establish sarama producer %s", err.Error())
+	}
 
 	// craft grpc client instance
 	conn, err := grpc.Dial("localhost:8091", grpc.WithTransportCredentials(
 		insecure.NewCredentials()))
 	if err != nil {
-		logrus.Fatalf("can establish grpc client conn %s", err.Error())
+		logrus.Fatalf("cant establish grpc client conn %s", err.Error())
 	}
 
 	c := pb.NewAuditServiceClient(conn)

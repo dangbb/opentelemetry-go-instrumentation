@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"os"
 	"sync"
@@ -205,15 +204,6 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 			}
 
 			gmap.MustEnrichSpan(&event, event.Goid, g.LibraryName())
-
-			fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
-				g.LibraryName(),
-				event.ParentSpanContext.TraceID.String(),
-				event.ParentSpanContext.SpanID.String(),
-				event.SpanContext.TraceID.String(),
-				event.SpanContext.SpanID.String(),
-				event.CurThread,
-				event.Goid)
 
 			eventsChan <- g.convertEvent(&event)
 		}

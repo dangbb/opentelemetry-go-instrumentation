@@ -1,7 +1,6 @@
 package gmap
 
 import (
-	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/events"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -141,8 +140,6 @@ func RegisterSpan(event *EnrichGMapEvent, lib string, replace bool) {
 	writeLock.Lock()
 	defer writeLock.Unlock()
 
-	fmt.Printf("Trying to register span %d\n", event.Key)
-
 	goid := event.Key
 
 	// if goroutine id already taken, then skip
@@ -150,10 +147,6 @@ func RegisterSpan(event *EnrichGMapEvent, lib string, replace bool) {
 	if ok {
 		// for server, replace whenever got new event
 		if replace {
-			fmt.Printf("Replace goid %d, with pid: %s - sid: %s",
-				goid,
-				event.Sc.TraceID,
-				event.Sc.SpanID)
 			SetGoId2Sc(goid, event.Sc)
 		}
 	} else {
@@ -162,15 +155,9 @@ func RegisterSpan(event *EnrichGMapEvent, lib string, replace bool) {
 			event.Psc = psc
 			event.Sc.TraceID = event.Psc.TraceID
 			event.Sc.SpanID = GenRandomSpanId()
-
-			fmt.Printf("Ancestor found for %d", goid)
 		}
 		// set value of goroutine in current node to middleware
 		// all request after this will be the child of this middleware
-		fmt.Printf("Set goid %d, with pid: %s - sid: %s\n",
-			goid,
-			event.Sc.TraceID,
-			event.Sc.SpanID)
 		SetGoId2Sc(goid, event.Sc)
 	}
 }
@@ -178,8 +165,6 @@ func RegisterSpan(event *EnrichGMapEvent, lib string, replace bool) {
 func MustEnrichSpan(event context.IBaseSpan, goid uint64, lib string) {
 	writeLock.Lock()
 	defer writeLock.Unlock()
-
-	fmt.Printf("Trying to enrich for goid %d - lib %s\n", goid, lib)
 
 	currentSc := event.GetSpanContext()
 
@@ -218,8 +203,6 @@ func ConvertEvent(event EnrichGMapEvent) *events.Event {
 		SpanID:     event.Psc.SpanID,
 		TraceFlags: trace.FlagsSampled,
 	})
-
-	fmt.Printf("Value of start time: %d\n", event.StartTime)
 
 	return &events.Event{
 		Library: "go.opentelemetry.io/auto/pkg/instrumentors/gmap",

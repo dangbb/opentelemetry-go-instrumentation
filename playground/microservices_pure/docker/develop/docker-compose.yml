@@ -1,6 +1,7 @@
 version: '3.7'
 
 services:
+  # Infra
   audit-mysql:
     image: mysql:8
     container_name: audit-mysql
@@ -311,6 +312,7 @@ services:
     environment:
       - REDIS_ADDRESS=shared-redis:6379
       - REDIS_PASSWORD=
+      - QUEUE_DELAY_DURATION=100ms
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_GO_AUTO_TARGET_EXE=/app/interceptor
       - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
@@ -336,6 +338,7 @@ services:
     environment:
       - REDIS_ADDRESS=shared-redis:6379
       - REDIS_PASSWORD=
+      - QUEUE_DELAY_DURATION=100ms
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_GO_AUTO_TARGET_EXE=/app/audit
       - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
@@ -361,6 +364,7 @@ services:
     environment:
       - REDIS_ADDRESS=shared-redis:6379
       - REDIS_PASSWORD=
+      - QUEUE_DELAY_DURATION=100ms
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_GO_AUTO_TARGET_EXE=/app/warehouse
       - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
@@ -386,6 +390,7 @@ services:
     environment:
       - REDIS_ADDRESS=localhost:6379
       - REDIS_PASSWORD=
+      - QUEUE_DELAY_DURATION=100ms
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_GO_AUTO_TARGET_EXE=/app/customer
       - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true

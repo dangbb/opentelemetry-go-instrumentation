@@ -57,7 +57,7 @@ func (s *AuditServer) AuditSend(ctx context.Context, in *pb.AuditSendRequest) (*
 }
 
 func RunAuditServer(cfg config.Config) {
-	dns := "username:password@tcp(localhost:3320)/dbname?charset=utf8mb4&parseTime=True"
+	dns := cfg.MySqlConfig.GetDsn()
 	db, err := gorm.Open(mysql.Open(dns), &gorm.Config{
 		Logger:                                   logger.Default,
 		DisableForeignKeyConstraintWhenMigrating: true,

@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"os"
 	"strings"
@@ -214,26 +213,12 @@ func (g *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 		gmap.MustEnrichSpan(&event, event.Goid, g.LibraryName())
 
-		fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
-			g.LibraryName(),
-			event.ParentSpanContext.TraceID.String(),
-			event.ParentSpanContext.SpanID.String(),
-			event.SpanContext.TraceID.String(),
-			event.SpanContext.SpanID.String(),
-			event.CurThread,
-			event.Goid)
-
 		eventsChan <- g.convertEvent(&event)
 	})
 
 	utils.EventProrityQueueSingleton.Register(grpcClientPlaceholderEventType, func(rawEvent interface{}) {
 		event := rawEvent.(gmap.GMapEvent)
 		if event.Type == 4 {
-			fmt.Printf("%s - type 4 DEBUG event - write trace sc.tid: %s - sc.sid: %s - key: %d\n",
-				g.LibraryName(),
-				event.Sc.TraceID.String(),
-				event.Sc.SpanID.String(),
-				event.Key)
 			return
 		}
 
@@ -339,7 +324,6 @@ func (g *Instrumentor) convertEvent(e *Event) *events.Event {
 		pscPtr = nil
 	}
 
-	log.Logger.V(0).Info("got spancontext", "trace_id", e.SpanContext.TraceID.String(), "span_id", e.SpanContext.SpanID.String())
 	return &events.Event{
 		Library:           g.LibraryName(),
 		Name:              method,

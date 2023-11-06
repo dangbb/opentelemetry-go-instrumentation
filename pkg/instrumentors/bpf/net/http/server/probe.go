@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"golang.org/x/xerrors"
 	"os"
@@ -67,11 +66,21 @@ type Instrumentor struct {
 	returnProbs     []link.Link
 	eventsReader    *perf.Reader
 	gmapEventReader *perf.Reader
+
+	perfRecordChan chan perf.Record
+	perfRecordDone chan struct{}
+	perfGmapChan   chan perf.Record
+	perfGmapDone   chan struct{}
 }
 
 // New returns a new [Instrumentor].
 func New() *Instrumentor {
-	return &Instrumentor{}
+	return &Instrumentor{
+		perfRecordChan: make(chan perf.Record, 1000),
+		perfGmapChan:   make(chan perf.Record, 1000),
+		perfRecordDone: make(chan struct{}, 1),
+		perfGmapDone:   make(chan struct{}, 1),
+	}
 }
 
 // LibraryName returns the net/http package name.
@@ -192,7 +201,7 @@ func (h *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	logger := log.Logger.WithName("net/http-instrumentor")
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(4)
 
 	netServerMainEventType := utils.ItemType("net_server_main_event")
 	netServerPlaceholderEventType := utils.ItemType("net_server_placeholder_event")
@@ -202,26 +211,11 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 		gmap.MustEnrichSpan(&event, event.Goid, h.LibraryName())
 
-		fmt.Printf("%s - write trace psc.tid: %s - psc.sid: %s\nsc.tid: %s - sc.sid: %s - thread: %d - expected goid: %d\n",
-			h.LibraryName(),
-			event.ParentSpanContext.TraceID.String(),
-			event.ParentSpanContext.SpanID.String(),
-			event.SpanContext.TraceID.String(),
-			event.SpanContext.SpanID.String(),
-			event.CurThread,
-			event.Goid)
-
 		eventsChan <- h.convertEvent(&event)
 	})
 
 	utils.EventProrityQueueSingleton.Register(netServerPlaceholderEventType, func(rawEvent interface{}) {
 		event := rawEvent.(gmap.GMapEvent)
-		fmt.Printf("net.http/Server get sample type: %d - key: %d - value: %d - sc.tid: %s - sc.sid: %s\n",
-			event.Type,
-			event.Key,
-			event.Value,
-			event.Sc.TraceID.String(),
-			event.Sc.SpanID.String())
 
 		if event.Type != gmap.GoId2Sc {
 			logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")
@@ -234,7 +228,6 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 
 	go func() {
 		defer wg.Done()
-		var event Event
 		for {
 			record, err := h.eventsReader.Read()
 			if err != nil {
@@ -245,23 +238,33 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			if record.LostSamples != 0 {
-				logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
-				continue
-			}
-
-			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-				logger.Error(err, "error parsing perf event")
-				continue
-			}
-
-			utils.EventProrityQueueSingleton.Push(event, event.StartTime, netServerMainEventType)
+			h.perfRecordChan <- record
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		var event gmap.GMapEvent
+		var event Event
+		for {
+			select {
+			case record := <-h.perfRecordChan:
+				if record.LostSamples != 0 {
+					logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
+					continue
+				}
+
+				if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+					logger.Error(err, "error parsing perf event")
+					continue
+				}
+
+				utils.EventProrityQueueSingleton.Push(event, event.StartTime, netServerMainEventType)
+			}
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
 		for {
 			record, err := h.gmapEventReader.Read()
 			if err != nil {
@@ -272,17 +275,30 @@ func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 				continue
 			}
 
-			if record.LostSamples != 0 {
-				logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
-				continue
-			}
+			h.perfGmapChan <- record
+		}
+	}()
 
-			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-				logger.Error(err, "error parsing perf event")
-				continue
-			}
+	go func() {
+		defer wg.Done()
+		var event gmap.GMapEvent
+		for {
+			select {
+			case record := <-h.perfGmapChan:
+				if record.LostSamples != 0 {
+					logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
+					continue
+				}
 
-			utils.EventProrityQueueSingleton.Push(event, event.StartTime-1, netServerPlaceholderEventType)
+				if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+					logger.Error(err, "error parsing perf event")
+					continue
+				}
+
+				utils.EventProrityQueueSingleton.Push(event, event.StartTime-1, netServerPlaceholderEventType)
+			case <-h.perfGmapDone:
+				break
+			}
 		}
 	}()
 
@@ -352,4 +368,7 @@ func (h *Instrumentor) Close() {
 	if h.bpfObjects != nil {
 		h.bpfObjects.Close()
 	}
+
+	h.perfRecordDone <- struct{}{}
+	h.perfGmapDone <- struct{}{}
 }
