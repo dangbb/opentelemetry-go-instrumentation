@@ -1,10 +1,12 @@
 package gmap
 
 import (
+	"github.com/patrickmn/go-cache"
 	"go.opentelemetry.io/auto/pkg/instrumentors/events"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/rand"
+	"strconv"
 	"sync"
 	"time"
 
@@ -19,25 +21,19 @@ const (
 )
 
 // using map for PoC
+// todo, using redis or smth for retention
 var (
-	goPc2PGoId     = map[uint64]uint64{}
-	goPc2PGoIdLock = sync.Mutex{}
+	//goPc2PGoId     = map[uint64]uint64{}
+	goPc2PGoId = cache.New(1*time.Minute, 1*time.Minute)
 
-	goId2PGoId     = map[uint64]uint64{}
-	goId2PGoIdLock = sync.Mutex{}
+	//goId2PGoId     = map[uint64]uint64{}
+	goId2PGoId = cache.New(1*time.Minute, 1*time.Minute)
 
-	goId2Sc     = map[uint64]context.EBPFSpanContext{}
-	goId2ScLock = sync.Mutex{}
+	// goId2Sc     = map[uint64]context.EBPFSpanContext{}
+	goId2Sc = cache.New(1*time.Minute, 1*time.Minute)
 
 	writeLock = sync.Mutex{}
-
-	maxRange = 20
 )
-
-type linkedListNode struct {
-	sc         context.EBPFSpanContext
-	parentNode *linkedListNode
-}
 
 func getAncestorSc(goid uint64) (context.EBPFSpanContext, bool, bool) {
 	for {
@@ -75,48 +71,42 @@ func GetAncestorSc(goid uint64) (context.EBPFSpanContext, bool) {
 }
 
 func SetGoPc2GoId(key, value uint64) {
-	goPc2PGoIdLock.Lock()
-	defer goPc2PGoIdLock.Unlock()
-
-	goPc2PGoId[key] = value
+	goPc2PGoId.Set(strconv.FormatUint(key, 10), value, cache.DefaultExpiration)
 }
 
 func GetGoPc2GoId(key uint64) (uint64, bool) {
-	goPc2PGoIdLock.Lock()
-	defer goPc2PGoIdLock.Unlock()
-
-	res, ok := goPc2PGoId[key]
-	return res, ok
+	res, found := goPc2PGoId.Get(strconv.FormatUint(key, 10))
+	if found {
+		value, ok := res.(uint64)
+		return value, ok
+	}
+	return 0, false
 }
 
 func SetGoId2PGoId(key, value uint64) {
-	goId2PGoIdLock.Lock()
-	defer goId2PGoIdLock.Unlock()
-
-	goId2PGoId[key] = value
+	goId2PGoId.Set(strconv.FormatUint(key, 10), value, cache.DefaultExpiration)
 }
 
 func GetGoId2PGoId(key uint64) (uint64, bool) {
-	goId2PGoIdLock.Lock()
-	defer goId2PGoIdLock.Unlock()
-
-	res, ok := goId2PGoId[key]
-	return res, ok
+	res, found := goId2PGoId.Get(strconv.FormatUint(key, 10))
+	if found {
+		value, ok := res.(uint64)
+		return value, ok
+	}
+	return 0, false
 }
 
 func SetGoId2Sc(key uint64, value context.EBPFSpanContext) {
-	goId2ScLock.Lock()
-	defer goId2ScLock.Unlock()
-
-	goId2Sc[key] = value
+	goId2Sc.Set(strconv.FormatUint(key, 10), value, cache.DefaultExpiration)
 }
 
 func GetGoId2Sc(key uint64) (context.EBPFSpanContext, bool) {
-	goId2ScLock.Lock()
-	defer goId2ScLock.Unlock()
-
-	res, ok := goId2Sc[key]
-	return res, ok
+	res, found := goId2Sc.Get(strconv.FormatUint(key, 10))
+	if found {
+		value, ok := res.(context.EBPFSpanContext)
+		return value, ok
+	}
+	return context.EBPFSpanContext{}, false
 }
 
 // GMapEvent Define gmap event
