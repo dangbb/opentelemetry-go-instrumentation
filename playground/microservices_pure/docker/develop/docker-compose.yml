@@ -147,48 +147,7 @@ services:
     networks:
       - service-mesh-dev
 
-  app-audit-service-migrate:
-    build:
-      context: ../..
-      dockerfile: service/auditservice/.Dockerfile
-    command:
-      - migrate
-      - up
-    pid: "host"
-    ports:
-      - "8091:8091"
-    logging:
-      driver: "json-file"
-      options:
-        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
-    environment:
-      LOGGER_LEVEL: debug
-      GRPC_PORT: 8091
-      MYSQL_HOST: audit-mysql
-      MYSQL_PORT: 3306
-      MYSQL_DBNAME: dbname
-      MYSQL_USERNAME: username
-      MYSQL_PASSWORD: password
-
-      MIGRATION_FOLDER: /app/migration
-
-      KAFKA_BROKER: localhost:9092
-      KAFKA_TOPIC: warehouse
-
-      INTERCEPTOR_ADDRESS: app-interceptor:8090
-      AUDIT_ADDRESS: app-audit-service:8091
-      WAREHOUSE_ADDRESS: http://app-warehouse:8092
-      CUSTOMER_ADDRESS: http://app-customer:8093
-    volumes:
-      - /proc:/host/proc
-      - ../../service/auditservice/migration:/app/migration
-    networks:
-      - service-mesh-dev
-
   app-audit-service:
-    depends_on:
-      app-audit-service-migrate:
-        condition: service_completed_successfully
     build:
       context: ../..
       dockerfile: service/auditservice/.Dockerfile
@@ -313,6 +272,7 @@ services:
       - REDIS_ADDRESS=shared-redis:6379
       - REDIS_PASSWORD=
       - QUEUE_DELAY_DURATION=100ms
+      - QUEUE_MAX_SIZE=50000
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
       - OTEL_GO_AUTO_TARGET_EXE=/app/interceptor
       - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true

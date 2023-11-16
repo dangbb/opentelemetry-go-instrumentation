@@ -4,7 +4,12 @@ networks:
   monitoring:
 
 volumes:
-  prometheus_data: {}
+  prometheus_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: '${VOLUME_FOLDER}'
+      o: bind
 
 services:
   prometheus:

@@ -18,6 +18,9 @@ func main() {
 
 	switch kongCtx.Command() {
 	case "server":
+		migrate.Up(cliConfig.MySqlConfig.GetDsn(),
+			cliConfig.MigrationFolder)
+
 		serve.RunAuditServer(cliConfig)
 	case "migrate <command> <option>":
 		switch cliConfig.Migrate.Command {
@@ -31,8 +34,8 @@ func main() {
 	case "migrate <command>":
 		switch cliConfig.Migrate.Command {
 		case "up":
-			migrate.Up("username:password@tcp(localhost:3320)/dbname?charset=utf8mb4&parseTime=True",
-				"/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/microservices_pure/service/auditservice/migration")
+			migrate.Up(cliConfig.MySqlConfig.GetDsn(),
+				cliConfig.MigrationFolder)
 		}
 	}
 }

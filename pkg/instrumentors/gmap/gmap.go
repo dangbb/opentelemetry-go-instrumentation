@@ -1,14 +1,15 @@
 package gmap
 
 import (
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/patrickmn/go-cache"
 	"go.opentelemetry.io/auto/pkg/instrumentors/events"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/rand"
-	"strconv"
-	"sync"
-	"time"
 
 	"go.opentelemetry.io/auto/pkg/instrumentors/constant"
 	"go.opentelemetry.io/auto/pkg/instrumentors/context"

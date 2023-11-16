@@ -103,7 +103,7 @@ func newWarehouseService(config config.Config) (WarehouseService, error) {
 
 	logrus.Infof("Connect to broker addr: %s", config.KafkaConfig.Broker)
 
-	brokers := []string{"0.0.0.0:9092"}
+	brokers := []string{config.KafkaConfig.Broker}
 
 	producer, err := sarama.NewSyncProducer(brokers, cfg)
 	if err != nil {
@@ -111,7 +111,7 @@ func newWarehouseService(config config.Config) (WarehouseService, error) {
 	}
 
 	// craft grpc client instance
-	conn, err := grpc.Dial("localhost:8091", grpc.WithTransportCredentials(
+	conn, err := grpc.Dial(config.AuditAddress, grpc.WithTransportCredentials(
 		insecure.NewCredentials()))
 	if err != nil {
 		logrus.Fatalf("cant establish grpc client conn %s", err.Error())
