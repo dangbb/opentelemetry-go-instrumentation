@@ -270,11 +270,11 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	key := unix.ByteSliceToString(e.Key[:])
 	value := unix.ByteSliceToString(e.Value[:])
 
-	//headerKey1 := unix.ByteSliceToString(e.Header1[:])
-	//headerKey2 := unix.ByteSliceToString(e.Header2[:])
+	headerKey1 := unix.ByteSliceToString(e.Header1[:])
+	headerKey2 := unix.ByteSliceToString(e.Header2[:])
 	//headerKey3 := unix.ByteSliceToString(e.Header3[:])
-	//headerValue1 := unix.ByteSliceToString(e.Value1[:])
-	//headerValue2 := unix.ByteSliceToString(e.Value2[:])
+	headerValue1 := unix.ByteSliceToString(e.Value1[:])
+	headerValue2 := unix.ByteSliceToString(e.Value2[:])
 	//headerValue3 := unix.ByteSliceToString(e.Value3[:])
 
 	psc := trace.NewSpanContext(trace.SpanContextConfig{
@@ -302,12 +302,12 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 			attribute.Key("key").String(key),
 			attribute.Key("value").String(value),
 			attribute.Key("go-id").Int64(int64(e.Goid)),
-			//// Header 1
-			//attribute.Key("header key 1").String(headerKey1),
-			//attribute.Key("header value 1").String(headerValue1),
-			//// Header 2
-			//attribute.Key("header key 2").String(headerKey2),
-			//attribute.Key("header value 2").String(headerValue2),
+			// Header 1
+			attribute.Key("header key 1").String(headerKey1),
+			attribute.Key("header value 1").String(headerValue1),
+			// Header 2
+			attribute.Key("header key 2").String(headerKey2),
+			attribute.Key("header value 2").String(headerValue2),
 			//// Header 3
 			//attribute.Key("header key 3").String(headerKey3),
 			//attribute.Key("header value 3").String(headerValue3),
