@@ -61,7 +61,7 @@ LOGGER_LEVEL=debug GRPC_PORT=8093 MYSQL_HOST=audit-mysql MYSQL_PORT=3306 MYSQL_D
 
 3. Chạy công cụ theo dõi. Ví dụ đối với interceptor
 
-`OTEL_GO_AUTO_TARGET_EXE` chứa full path 
+`OTEL_GO_AUTO_TARGET_EXE` chứa full path. E.g:;
 
 ```shell
 export OTEL_GO_AUTO_TARGET_EXE=/home/dangbb/dangnh-opentelemetry-go-instrumentation/playground/microservices_pure/bin/interceptor;

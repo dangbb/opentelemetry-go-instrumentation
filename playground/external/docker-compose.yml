@@ -1,0 +1,175 @@
+version: '3.7'
+
+services:
+  # observability service
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=debug
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    restart: unless-stopped
+
+  # tracing service
+  go-auto-web:
+    depends_on:
+      - jaeger
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
+    privileged: true
+    pid: "host"
+    environment:
+      - REDIS_ADDRESS=shared-redis:6379
+      - REDIS_PASSWORD=
+      - QUEUE_DELAY_DURATION=100ms
+      - QUEUE_MAX_SIZE=50000
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/web
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=web
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/proc
+
+  go-auto-proxy:
+    depends_on:
+      - jaeger
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    privileged: true
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
+    pid: "host"
+    environment:
+      - REDIS_ADDRESS=shared-redis:6379
+      - REDIS_PASSWORD=
+      - QUEUE_DELAY_DURATION=100ms
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/proxy
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=proxy
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/proc
+
+  go-auto-product:
+    depends_on:
+      - jaeger
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    privileged: true
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
+    pid: "host"
+    environment:
+      - REDIS_ADDRESS=shared-redis:6379
+      - REDIS_PASSWORD=
+      - QUEUE_DELAY_DURATION=100ms
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/product
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=product
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/proc
+
+  go-auto-kitchen:
+    depends_on:
+      - jaeger
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    privileged: true
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
+    pid: "host"
+    environment:
+      - REDIS_ADDRESS=localhost:6379
+      - REDIS_PASSWORD=
+      - QUEUE_DELAY_DURATION=100ms
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/kitchen
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=kitchen
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/proc
+
+  go-auto-counter:
+    depends_on:
+      - jaeger
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    privileged: true
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
+    pid: "host"
+    environment:
+      - REDIS_ADDRESS=localhost:6379
+      - REDIS_PASSWORD=
+      - QUEUE_DELAY_DURATION=100ms
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/counter
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=counter
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/proc
+
+  go-auto-barista:
+    depends_on:
+      - jaeger
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    privileged: true
+    logging:
+      driver: "json-file"
+      options:
+        tag: "{{.ImageName}}|{{.Name}}|{{.ImageFullID}}|{{.FullID}}"
+    pid: "host"
+    environment:
+      - REDIS_ADDRESS=localhost:6379
+      - REDIS_PASSWORD=
+      - QUEUE_DELAY_DURATION=100ms
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_GO_AUTO_TARGET_EXE=/app/barista
+      - OTEL_GO_AUTO_INCLUDE_DB_STATEMENT=true
+      - OTEL_SERVICE_NAME=barista
+      - OTEL_PROPAGATORS=tracecontext,baggage
+      - CGO_ENABLED=1
+    volumes:
+      - /proc:/host/proc
+
+networks:
+  service-mesh-dev:
+    driver: bridge
