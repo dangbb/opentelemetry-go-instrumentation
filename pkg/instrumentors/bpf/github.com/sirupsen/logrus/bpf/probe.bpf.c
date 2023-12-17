@@ -16,7 +16,6 @@
 #include "span_context.h"
 #include "go_context.h"
 #include "uprobe.h"
-#include "gmap.h"
 
 char __license[] SEC("license") = "Dual MIT/GPL";
 
@@ -28,9 +27,6 @@ struct log_event_t {
     BASE_SPAN_PROPERTIES
     u64 level;
     char log[MAX_LOG_SIZE];
-    u64 goid;
-    u64 is_goroutine;
-    u64 cur_thread;
 };
 
 struct {
@@ -108,36 +104,7 @@ int uprobe_Logrus_EntryWrite(struct pt_regs *ctx) { // take list of register and
     bpf_probe_read(&path_ptr, sizeof(path_ptr), (void *)(entry_ptr + message_ptr_pos));
     bpf_probe_read(&logEvent.log, msg_len, path_ptr);
 
-    u64 goid = logEvent.goid;
-    void* same_goroutine_sc_ptr = bpf_map_lookup_elem(&goroutine_sc_map, &goid);
-
-    if (same_goroutine_sc_ptr != NULL) {
-        struct span_context sc = {};
-        bpf_probe_read(&sc, sizeof(sc), same_goroutine_sc_ptr);
-
-        logEvent.psc = sc;
-        copy_byte_arrays(logEvent.psc.TraceID, logEvent.sc.TraceID, TRACE_ID_SIZE);
-        generate_random_bytes(logEvent.sc.SpanID, SPAN_ID_SIZE);
-    } else {
-        logEvent.sc = generate_span_context();
-    }
-
-    // add to perf map
-    // BPF_F_CURRENT_CPU flaf option ?
-    u64 cur_thread = bpf_get_current_pid_tgid();
-
-    logEvent.goid = get_current_goroutine();
-    logEvent.cur_thread = cur_thread;
-
-    // send type 3 event
-    struct gmap_t event3 = {};
-
-    event3.key = logEvent.goid;
-    event3.sc = logEvent.sc;
-    event3.type = GOID_SC;
-    event3.start_time = logEvent.start_time;
-
-    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
+    logEvent.sc = generate_span_context();
 
     void *key = get_consistent_key(ctx, entry_ptr);
     bpf_map_update_elem(&log_events, &key, &logEvent, 0);
@@ -156,8 +123,6 @@ int uprobe_Logrus_EntryWrite_Returns(struct pt_regs *ctx) {
     struct log_event_t tmpReq = {};
     bpf_probe_read(&tmpReq, sizeof(tmpReq), req_ptr_map);
     tmpReq.end_time = bpf_ktime_get_ns();
-
-    tmpReq.goid = get_current_goroutine();
 
     bpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &tmpReq, sizeof(tmpReq));
     bpf_map_delete_elem(&log_events, &key);

@@ -22,11 +22,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/sys/unix"
-	"os"
-	"sync"
-
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/perf"
@@ -34,10 +29,12 @@ import (
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpffs"
 	"go.opentelemetry.io/auto/pkg/instrumentors/context"
 	"go.opentelemetry.io/auto/pkg/instrumentors/events"
-	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
 	"go.opentelemetry.io/auto/pkg/instrumentors/utils"
 	"go.opentelemetry.io/auto/pkg/log"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sys/unix"
+	"os"
 )
 
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target amd64,arm64 -cc clang -cflags $CFLAGS bpf ./bpf/probe.bpf.c
@@ -49,18 +46,8 @@ const (
 
 type Event struct {
 	context.BaseSpanProperties
-	Topic       [30]byte
-	Key         [20]byte
-	Value       [50]byte
-	_           [4]byte
-	Goid        uint64
-	Header1     [25]byte
-	Value1      [25]byte
-	Header2     [25]byte
-	Value2      [25]byte
-	_           [4]byte
-	IsGoroutine uint64
-	CurThread   uint64
+	Topic [30]byte
+	Value [50]byte
 	//Header3 [25]byte
 	//Value3  [25]byte
 }
@@ -133,12 +120,6 @@ func (i *Instrumentor) Load(ctx *context.InstrumentorContext) error {
 	}
 	i.eventsReader = rd
 
-	gmrd, err := perf.NewReader(i.bpfObjects.GmapEvents, os.Getpagesize())
-	if err != nil {
-		return err
-	}
-	i.gmapEventReader = gmrd
-
 	return nil
 }
 
@@ -180,109 +161,38 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 
 func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	logger := log.Logger.WithName(instrumentorName)
-	wg := sync.WaitGroup{}
-	wg.Add(2)
 
-	saramaMainEventType := utils.ItemType("sarama_main_event")
-	saramaPlaceholderEventType := utils.ItemType("sarama_placeholder_event")
+	var event Event
 
-	utils.EventProrityQueueSingleton.Register(saramaMainEventType, func(rawEvent interface{}) {
-		event := rawEvent.(Event)
+	for {
+		record, err := i.eventsReader.Read()
+		if err != nil {
+			if errors.Is(err, perf.ErrClosed) {
+				logger.Info("[DEBUG] - Perf channel closed.")
+				return
+			}
+			logger.Error(err, "error reading from perf reader")
+			// Add metric to count error from perf reader
+			continue
+		}
 
-		gmap.MustEnrichSpan(&event, event.Goid, i.LibraryName())
+		if record.LostSamples != 0 {
+			logger.V(0).Info("perf event rung buffer full", "dropped", record.LostSamples)
+			continue
+		}
+
+		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+			logger.Error(err, "error parsing perf event")
+			continue
+		}
 
 		eventsChan <- i.convertEvent(&event)
-	})
-
-	utils.EventProrityQueueSingleton.Register(saramaPlaceholderEventType, func(rawEvent interface{}) {
-		event := rawEvent.(gmap.GMapEvent)
-		enrichEvent := gmap.ConvertEnrichEvent(event)
-		gmap.RegisterSpan(&enrichEvent, i.LibraryName(), false)
-
-		if enrichEvent.Psc.TraceID.IsValid() {
-			// middleware created
-			eventsChan <- gmap.ConvertEvent(enrichEvent)
-		}
-	})
-
-	go func() {
-		defer wg.Done()
-		var event Event
-
-		for {
-			record, err := i.eventsReader.Read()
-			if err != nil {
-				if errors.Is(err, perf.ErrClosed) {
-					logger.Info("[DEBUG] - Perf channel closed.")
-					return
-				}
-				logger.Error(err, "error reading from perf reader")
-				// Add metric to count error from perf reader
-				continue
-			}
-
-			if record.LostSamples != 0 {
-				logger.V(0).Info("perf event rung buffer full", "dropped", record.LostSamples)
-				continue
-			}
-
-			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-				logger.Error(err, "error parsing perf event")
-				continue
-			}
-
-			utils.EventProrityQueueSingleton.Push(event, event.StartTime, saramaMainEventType)
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		var event gmap.GMapEvent
-		for {
-			record, err := i.gmapEventReader.Read()
-			if err != nil {
-				if errors.Is(err, perf.ErrClosed) {
-					return
-				}
-				logger.Error(err, "error reading from perf reader")
-				continue
-			}
-
-			if record.LostSamples != 0 {
-				logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
-				continue
-			}
-
-			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-				logger.Error(err, "error parsing perf event")
-				continue
-			}
-
-			utils.EventProrityQueueSingleton.Push(event, event.StartTime-1, saramaPlaceholderEventType)
-		}
-	}()
-
-	wg.Wait()
+	}
 }
 
 func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	topic := unix.ByteSliceToString(e.Topic[:])
-	key := unix.ByteSliceToString(e.Key[:])
 	value := unix.ByteSliceToString(e.Value[:])
-
-	headerKey1 := unix.ByteSliceToString(e.Header1[:])
-	headerKey2 := unix.ByteSliceToString(e.Header2[:])
-	//headerKey3 := unix.ByteSliceToString(e.Header3[:])
-	headerValue1 := unix.ByteSliceToString(e.Value1[:])
-	headerValue2 := unix.ByteSliceToString(e.Value2[:])
-	//headerValue3 := unix.ByteSliceToString(e.Value3[:])
-
-	psc := trace.NewSpanContext(trace.SpanContextConfig{
-		TraceID:    e.ParentSpanContext.TraceID,
-		SpanID:     e.ParentSpanContext.SpanID,
-		TraceFlags: trace.FlagsSampled,
-		Remote:     e.IsGoroutine > 0,
-	})
 
 	sc := trace.NewSpanContext(trace.SpanContextConfig{
 		TraceID:    e.SpanContext.TraceID,
@@ -291,26 +201,14 @@ func (i *Instrumentor) convertEvent(e *Event) *events.Event {
 	})
 
 	return &events.Event{
-		Name:              fmt.Sprintf("Sarama topic: %s", topic),
-		Library:           i.LibraryName(),
-		Kind:              trace.SpanKindServer,
-		StartTime:         int64(e.StartTime),
-		EndTime:           int64(e.EndTime),
-		SpanContext:       &sc,
-		ParentSpanContext: &psc,
+		Name:        fmt.Sprintf("Sarama topic: %s", topic),
+		Library:     i.LibraryName(),
+		Kind:        trace.SpanKindServer,
+		StartTime:   int64(e.StartTime),
+		EndTime:     int64(e.EndTime),
+		SpanContext: &sc,
 		Attributes: []attribute.KeyValue{
-			attribute.Key("key").String(key),
 			attribute.Key("value").String(value),
-			attribute.Key("go-id").Int64(int64(e.Goid)),
-			// Header 1
-			attribute.Key("header key 1").String(headerKey1),
-			attribute.Key("header value 1").String(headerValue1),
-			// Header 2
-			attribute.Key("header key 2").String(headerKey2),
-			attribute.Key("header value 2").String(headerValue2),
-			//// Header 3
-			//attribute.Key("header key 3").String(headerKey3),
-			//attribute.Key("header value 3").String(headerValue3),
 		},
 	}
 }

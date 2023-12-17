@@ -19,21 +19,13 @@ package instrumentors
 
 import (
 	"fmt"
-	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/database/sql"
+	"go.opentelemetry.io/auto/pkg/instrumentors/allocator" // nolint:staticcheck  // Atomic deprecation.
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/IBM/sarama"
-	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/gin-gonic/gin"
-	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/runtime"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/github.com/sirupsen/logrus"
-	"go.opentelemetry.io/auto/pkg/instrumentors/bpf/google/golang/org/grpc"
-	grpcServer "go.opentelemetry.io/auto/pkg/instrumentors/bpf/google/golang/org/grpc/server"
-
-	"go.opentelemetry.io/auto/pkg/instrumentors/allocator"                      // nolint:staticcheck  // Atomic deprecation.
-	httpClient "go.opentelemetry.io/auto/pkg/instrumentors/bpf/net/http/client" // nolint:staticcheck  // Atomic deprecation.
-	httpServer "go.opentelemetry.io/auto/pkg/instrumentors/bpf/net/http/server" // nolint:staticcheck  // Atomic deprecation.
-	"go.opentelemetry.io/auto/pkg/instrumentors/events"                         // nolint:staticcheck  // Atomic deprecation.
-	"go.opentelemetry.io/auto/pkg/log"                                          // nolint:staticcheck  // Atomic deprecation.
-	"go.opentelemetry.io/auto/pkg/opentelemetry"                                // nolint:staticcheck  // Atomic deprecation.
-	"go.opentelemetry.io/auto/pkg/process"                                      // nolint:staticcheck  // Atomic deprecation.
+	"go.opentelemetry.io/auto/pkg/instrumentors/events" // nolint:staticcheck  // Atomic deprecation.
+	"go.opentelemetry.io/auto/pkg/log"                  // nolint:staticcheck  // Atomic deprecation.
+	"go.opentelemetry.io/auto/pkg/opentelemetry"        // nolint:staticcheck  // Atomic deprecation.
+	"go.opentelemetry.io/auto/pkg/process"              // nolint:staticcheck  // Atomic deprecation.
 )
 
 var (
@@ -117,18 +109,20 @@ func (m *Manager) FilterUnusedInstrumentors(target *process.TargetDetails) {
 
 func registerInstrumentors(m *Manager) error {
 	insts := []Instrumentor{
-		sql.New(),
-		grpc.New(),
-		grpcServer.New(),
-		httpServer.New(),
-		httpClient.New(),
+		// Disable all other library to isolate
+
+		// sql.New(),
+		// grpc.New(),
+		// grpcServer.New(),
+		// httpServer.New(),
+		// httpClient.New(),
 		// deprecated, for the sake of goroutine handler for net/http
 		//gorillaMux.New(),
-		gin.New(),
+		// gin.New(),
 		// New auto instrumentor for thesis
 		logrus.New(),
 		sarama.New(),
-		runtime.New(),
+		// runtime.New(),
 	}
 
 	for _, i := range insts {

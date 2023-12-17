@@ -13,23 +13,13 @@ import (
 )
 
 type bpfPublisherMessageT struct {
-	StartTime   uint64
-	EndTime     uint64
-	Sc          bpfSpanContext
-	Psc         bpfSpanContext
-	TraceRoot   uint64
-	Topic       [30]int8
-	Key         [20]int8
-	Value       [50]int8
-	_           [4]byte
-	Goid        uint64
-	Header1     [25]int8
-	Value1      [25]int8
-	Header2     [25]int8
-	Value2      [25]int8
-	_           [4]byte
-	IsGoroutine uint64
-	CurThread   uint64
+	StartTime uint64
+	EndTime   uint64
+	Sc        bpfSpanContext
+	Psc       bpfSpanContext
+	TraceRoot uint64
+	Topic     [30]int8
+	Value     [50]int8
 }
 
 type bpfSpanContext struct {
@@ -87,7 +77,6 @@ type bpfProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
 	Events                 *ebpf.MapSpec `ebpf:"events"`
-	GmapEvents             *ebpf.MapSpec `ebpf:"gmap_events"`
 	GoroutineScMap         *ebpf.MapSpec `ebpf:"goroutine_sc_map"`
 	GoroutinesMap          *ebpf.MapSpec `ebpf:"goroutines_map"`
 	PublisherMessageEvents *ebpf.MapSpec `ebpf:"publisher_message_events"`
@@ -115,7 +104,6 @@ func (o *bpfObjects) Close() error {
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
 	Events                 *ebpf.Map `ebpf:"events"`
-	GmapEvents             *ebpf.Map `ebpf:"gmap_events"`
 	GoroutineScMap         *ebpf.Map `ebpf:"goroutine_sc_map"`
 	GoroutinesMap          *ebpf.Map `ebpf:"goroutines_map"`
 	PublisherMessageEvents *ebpf.Map `ebpf:"publisher_message_events"`
@@ -126,7 +114,6 @@ type bpfMaps struct {
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.Events,
-		m.GmapEvents,
 		m.GoroutineScMap,
 		m.GoroutinesMap,
 		m.PublisherMessageEvents,

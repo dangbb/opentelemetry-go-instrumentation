@@ -93,22 +93,8 @@ int uprobe_GinEngine_ServeHTTP(struct pt_regs *ctx) {
     httpReq.goid = get_current_goroutine();
     httpReq.cur_thread = cur_thread;
 
-    // send type 3 event
-    struct gmap_t event3 = {};
-
-    event3.key = httpReq.goid;
-    event3.sc = httpReq.sc;
-    event3.type = GOID_SC;
-    event3.start_time = httpReq.start_time;
-
-    bpf_perf_event_output(ctx, &gmap_events, BPF_F_CURRENT_CPU, &event3, sizeof(event3));
-
-    bpf_map_update_elem(&goroutine_sc_map, &httpReq.goid, &httpReq.sc, 0);
-
     bpf_map_update_elem(&http_events, &key, &httpReq, 0);
     start_tracking_span(req_ctx_ptr, &httpReq.sc);
-
-    bpf_printk("Gin gonic goroutine %d", httpReq.goid);
 
     return 0;
 }

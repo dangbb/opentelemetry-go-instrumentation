@@ -28,19 +28,16 @@ import (
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/perf"
 	logrus_lib "github.com/sirupsen/logrus"
-	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/sys/unix"
-	"os"
-	"sync"
-
 	"go.opentelemetry.io/auto/pkg/inject"
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpffs"
 	"go.opentelemetry.io/auto/pkg/instrumentors/context"
 	"go.opentelemetry.io/auto/pkg/instrumentors/events"
 	"go.opentelemetry.io/auto/pkg/instrumentors/utils"
 	"go.opentelemetry.io/auto/pkg/log"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/sys/unix"
+	"os"
 )
 
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go -target amd64,arm64 -cc clang -cflags $CFLAGS bpf ./bpf/probe.bpf.c
@@ -118,12 +115,6 @@ func (i *Instrumentor) Load(ctx *context.InstrumentorContext) error {
 	}
 	i.eventsReader = rd
 
-	gmrd, err := perf.NewReader(i.bpfObjects.GmapEvents, os.Getpagesize())
-	if err != nil {
-		return err
-	}
-	i.gmapEventReader = gmrd
-
 	return nil
 }
 
@@ -166,89 +157,33 @@ func (i *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 
 func (i *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	logger := log.Logger.WithName(instrumentorName)
-	wg := sync.WaitGroup{}
-	wg.Add(2)
 
-	logrusMainEventType := utils.ItemType("logrus_main_event")
-	logrusPlaceholderEventType := utils.ItemType("logrus_placeholder_event")
+	var event Event
 
-	utils.EventProrityQueueSingleton.Register(logrusMainEventType, func(rawEvent interface{}) {
-		event := rawEvent.(Event)
+	for {
+		record, err := i.eventsReader.Read()
+		if err != nil {
+			if errors.Is(err, perf.ErrClosed) {
+				logger.Info("[DEBUG] - Perf channel closed.")
+				return
+			}
+			logger.Error(err, "error reading from perf reader")
+			// Add metric to count error from perf reader
+			continue
+		}
 
-		gmap.MustEnrichSpan(&event, event.Goid, i.LibraryName())
+		if record.LostSamples != 0 {
+			logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
+			continue
+		}
+
+		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+			logger.Error(err, "error parsing perf event")
+			continue
+		}
 
 		eventsChan <- i.convertEvent(&event)
-	})
-
-	utils.EventProrityQueueSingleton.Register(logrusPlaceholderEventType, func(rawEvent interface{}) {
-		event := rawEvent.(gmap.GMapEvent)
-		enrichEvent := gmap.ConvertEnrichEvent(event)
-		gmap.RegisterSpan(&enrichEvent, i.LibraryName(), false)
-
-		if enrichEvent.Psc.TraceID.IsValid() {
-			// middleware created
-			eventsChan <- gmap.ConvertEvent(enrichEvent)
-		}
-	})
-
-	go func() {
-		defer wg.Done()
-		var event gmap.GMapEvent
-		for {
-			record, err := i.gmapEventReader.Read()
-			if err != nil {
-				if errors.Is(err, perf.ErrClosed) {
-					return
-				}
-				logger.Error(err, "error reading from perf reader")
-				continue
-			}
-
-			if record.LostSamples != 0 {
-				logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
-				continue
-			}
-
-			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-				logger.Error(err, "error parsing perf event")
-				continue
-			}
-
-			// prioritize placeholder event
-			utils.EventProrityQueueSingleton.Push(event, event.StartTime-1, logrusPlaceholderEventType)
-		}
-	}()
-
-	go func() {
-		var event Event
-
-		for {
-			record, err := i.eventsReader.Read()
-			if err != nil {
-				if errors.Is(err, perf.ErrClosed) {
-					logger.Info("[DEBUG] - Perf channel closed.")
-					return
-				}
-				logger.Error(err, "error reading from perf reader")
-				// Add metric to count error from perf reader
-				continue
-			}
-
-			if record.LostSamples != 0 {
-				logger.V(0).Info("perf event rung buffer full", "dropped", record.LostSamples)
-				continue
-			}
-
-			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-				logger.Error(err, "error parsing perf event")
-				continue
-			}
-
-			utils.EventProrityQueueSingleton.Push(event, event.StartTime, logrusMainEventType)
-		}
-	}()
-
-	wg.Wait()
+	}
 }
 
 func convertLevel(level uint64) string {

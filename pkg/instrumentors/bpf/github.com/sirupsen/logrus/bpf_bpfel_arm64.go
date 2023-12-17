@@ -13,17 +13,14 @@ import (
 )
 
 type bpfLogEventT struct {
-	StartTime   uint64
-	EndTime     uint64
-	Sc          bpfSpanContext
-	Psc         bpfSpanContext
-	TraceRoot   uint64
-	Level       uint64
-	Log         [100]int8
-	_           [4]byte
-	Goid        uint64
-	IsGoroutine uint64
-	CurThread   uint64
+	StartTime uint64
+	EndTime   uint64
+	Sc        bpfSpanContext
+	Psc       bpfSpanContext
+	TraceRoot uint64
+	Level     uint64
+	Log       [100]int8
+	_         [4]byte
 }
 
 type bpfSpanContext struct {
@@ -81,7 +78,6 @@ type bpfProgramSpecs struct {
 // It can be passed ebpf.CollectionSpec.Assign.
 type bpfMapSpecs struct {
 	Events           *ebpf.MapSpec `ebpf:"events"`
-	GmapEvents       *ebpf.MapSpec `ebpf:"gmap_events"`
 	GoroutineScMap   *ebpf.MapSpec `ebpf:"goroutine_sc_map"`
 	GoroutinesMap    *ebpf.MapSpec `ebpf:"goroutines_map"`
 	LogEvents        *ebpf.MapSpec `ebpf:"log_events"`
@@ -109,7 +105,6 @@ func (o *bpfObjects) Close() error {
 // It can be passed to loadBpfObjects or ebpf.CollectionSpec.LoadAndAssign.
 type bpfMaps struct {
 	Events           *ebpf.Map `ebpf:"events"`
-	GmapEvents       *ebpf.Map `ebpf:"gmap_events"`
 	GoroutineScMap   *ebpf.Map `ebpf:"goroutine_sc_map"`
 	GoroutinesMap    *ebpf.Map `ebpf:"goroutines_map"`
 	LogEvents        *ebpf.Map `ebpf:"log_events"`
@@ -120,7 +115,6 @@ type bpfMaps struct {
 func (m *bpfMaps) Close() error {
 	return _BpfClose(
 		m.Events,
-		m.GmapEvents,
 		m.GoroutineScMap,
 		m.GoroutinesMap,
 		m.LogEvents,

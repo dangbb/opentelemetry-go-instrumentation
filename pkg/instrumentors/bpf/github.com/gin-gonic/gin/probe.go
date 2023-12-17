@@ -22,10 +22,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"go.opentelemetry.io/auto/pkg/instrumentors/gmap"
-	"golang.org/x/xerrors"
-	"sync"
-
 	"os"
 
 	"go.opentelemetry.io/auto/pkg/instrumentors/bpffs" // nolint:staticcheck  // Atomic deprecation.
@@ -182,88 +178,30 @@ func (h *Instrumentor) registerProbes(ctx *context.InstrumentorContext, funcName
 // Run runs the events processing loop.
 func (h *Instrumentor) Run(eventsChan chan<- *events.Event) {
 	logger := log.Logger.WithName("gin-gonic/gin-instrumentor")
-	wg := sync.WaitGroup{}
-	wg.Add(2)
 
-	ginMainEventType := utils.ItemType("gin_main_event")
-	ginPlaceholderEventType := utils.ItemType("gin_placeholder_event")
+	var event Event
+	for {
+		record, err := h.eventsReader.Read()
+		if err != nil {
+			if errors.Is(err, perf.ErrClosed) {
+				return
+			}
+			logger.Error(err, "error reading from perf reader")
+			continue
+		}
 
-	utils.EventProrityQueueSingleton.Register(ginMainEventType, func(rawEvent interface{}) {
-		event := rawEvent.(Event)
+		if record.LostSamples != 0 {
+			logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
+			continue
+		}
 
-		gmap.MustEnrichSpan(&event, event.Goid, h.LibraryName())
+		if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
+			logger.Error(err, "error parsing perf event")
+			continue
+		}
 
 		eventsChan <- h.convertEvent(&event)
-	})
-
-	utils.EventProrityQueueSingleton.Register(ginPlaceholderEventType, func(rawEvent interface{}) {
-		event := rawEvent.(gmap.GMapEvent)
-
-		if event.Type != gmap.GoId2Sc {
-			logger.Error(xerrors.Errorf("Invalid"), "Event error, type not GOID_SC")
-			return
-		}
-
-		// Gin gonic using one goroutine for all process. Should only keep same site on eBPF
-		enrichEvent := gmap.ConvertEnrichEvent(event)
-		gmap.RegisterSpan(&enrichEvent, h.LibraryName(), true)
-	})
-
-	go func() {
-		defer wg.Done()
-		var event Event
-		for {
-			record, err := h.eventsReader.Read()
-			if err != nil {
-				if errors.Is(err, perf.ErrClosed) {
-					return
-				}
-				logger.Error(err, "error reading from perf reader")
-				continue
-			}
-
-			if record.LostSamples != 0 {
-				logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
-				continue
-			}
-
-			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-				logger.Error(err, "error parsing perf event")
-				continue
-			}
-
-			utils.EventProrityQueueSingleton.Push(event, event.StartTime, ginMainEventType)
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		var event gmap.GMapEvent
-		for {
-			record, err := h.gmapEventReader.Read()
-			if err != nil {
-				if errors.Is(err, perf.ErrClosed) {
-					return
-				}
-				logger.Error(err, "error reading from perf reader")
-				continue
-			}
-
-			if record.LostSamples != 0 {
-				logger.V(0).Info("perf event ring buffer full", "dropped", record.LostSamples)
-				continue
-			}
-
-			if err := binary.Read(bytes.NewBuffer(record.RawSample), binary.LittleEndian, &event); err != nil {
-				logger.Error(err, "error parsing perf event")
-				continue
-			}
-
-			utils.EventProrityQueueSingleton.Push(event, event.StartTime-1, ginPlaceholderEventType)
-		}
-	}()
-
-	wg.Wait()
+	}
 }
 
 func (h *Instrumentor) convertEvent(e *Event) *events.Event {
